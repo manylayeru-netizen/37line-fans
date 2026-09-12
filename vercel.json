@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build:server && npm run build:client",
-  "outputDirectory": "dist/client/client",
+  "buildCommand": "npm run build:server && npm run build:client && sed -i 's|/app/[[:alnum:]_]*/assets/|/assets/|g' dist/client/index.html",
+  "outputDirectory": "dist/client",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...slug]" },
     { "source": "/((?!api/|assets/|.*\\..*).*)", "destination": "/index.html" }
