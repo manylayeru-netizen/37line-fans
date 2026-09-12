@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
 
-import { Welcome } from '@lark-apaas/client-toolkit/components/Welcome';
 import { useAuthStore } from '@client/src/store/auth.store';
 
 import Layout from './components/Layout';
