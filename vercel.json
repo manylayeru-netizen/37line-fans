@@ -11,5 +11,5 @@
       "includeFiles": "dist/server/**"
     }
   },
-  "installCommand": "npm install"
+  "installCommand": "npm install --ignore-scripts"
 }

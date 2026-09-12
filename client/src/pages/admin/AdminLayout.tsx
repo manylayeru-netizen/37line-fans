@@ -50,45 +50,45 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-cream flex">
+    <div className="min-h-screen bg-cream flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-64 bg-paper border-r-2 border-dashed border-grid p-6 flex flex-col">
+      <aside className="w-full md:w-64 bg-paper border-b-2 md:border-b-0 md:border-r-2 border-dashed border-grid p-4 md:p-6 flex flex-col md:flex-col">
         {/* Logo */}
-        <div className="mb-8 text-center">
+        <div className="mb-4 md:mb-8 text-center flex md:block items-center justify-center gap-3">
           <h1
-            className="text-3xl font-handwriting text-ink mb-1"
+            className="text-2xl md:text-3xl font-handwriting text-ink mb-1 md:mb-1"
             style={{ fontFamily: 'var(--font-handwriting)' }}
           >
             37line
           </h1>
-          <p className="text-xs text-cocoa/60 font-handwriting">后台管理手帐</p>
-          <div className="mt-3 h-1 w-16 mx-auto bg-shiba/30 rounded-full" />
+          <p className="text-xs text-cocoa/60 font-handwriting hidden md:block">后台管理手帐</p>
+          <div className="hidden md:block mt-3 h-1 w-16 mx-auto bg-shiba/30 rounded-full" />
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 flex md:block gap-1 overflow-x-auto pb-2 md:pb-0 md:space-y-1">
           {menuItems.map((item) => (
-            <div key={item.path}>
+            <div key={item.path} className="flex-shrink-0">
               <NavLink
                 to={item.path}
                 end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  `flex items-center gap-2 px-3 py-2 rounded-xl text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-shiba text-white shadow-md'
                       : 'text-cocoa hover:bg-shiba/10 hover:text-shiba'
                   }`
                 }
               >
-                <item.icon size={18} />
-                <span>{item.label}</span>
+                <item.icon size={16} />
+                <span className="hidden sm:inline">{item.label}</span>
               </NavLink>
             </div>
           ))}
         </nav>
 
         {/* User info */}
-        <div className="border-t-2 border-dashed border-grid pt-4 mt-4">
+        <div className="hidden md:block border-t-2 border-dashed border-grid pt-4 mt-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-mint flex items-center justify-center text-cocoa font-bold">
               {user?.displayName?.[0] || user?.username?.[0] || 'A'}
@@ -115,10 +115,36 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
             返回首页
           </Link>
         </div>
+
+        {/* Mobile: compact user bar */}
+        <div className="md:hidden flex items-center gap-2 pt-3 mt-3 border-t-2 border-dashed border-grid">
+          <div className="w-8 h-8 rounded-full bg-mint flex items-center justify-center text-cocoa font-bold text-sm">
+            {user?.displayName?.[0] || user?.username?.[0] || 'A'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-cocoa truncate">
+              {user?.displayName || user?.username}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 text-cocoa/70 hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+            title="退出登录"
+          >
+            <LogOut size={16} />
+          </button>
+          <Link
+            to="/"
+            className="p-2 text-cocoa/70 hover:bg-shiba/10 hover:text-shiba rounded-lg transition-colors"
+            title="返回首页"
+          >
+            <Home size={16} />
+          </Link>
+        </div>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-auto">
         <Outlet />
       </main>
     </div>

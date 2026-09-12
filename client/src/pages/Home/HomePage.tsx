@@ -131,9 +131,9 @@ const HomePage: React.FC = () => {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-center z-10 relative"
+          className="text-center z-10 relative mt-16 md:mt-20"
         >
-          <h1 className="font-handwriting text-6xl md:text-8xl text-ink leading-none mb-6 relative inline-block">
+          <h1 className="font-handwriting text-4xl text-ink leading-none mb-4 relative inline-block">
              37lineの小世界
              <span className="absolute top-2 -left-12 hidden md:block">
                <Star size={22} color="#F4A261" />
@@ -142,7 +142,7 @@ const HomePage: React.FC = () => {
                <Heart size={18} className="text-tape-pink" fill="currentColor" />
              </span>
            </h1>
-          <p className="font-mono tracking-widest text-lg md:text-xl text-cocoa/70 mb-8 uppercase">
+          <p className="font-mono tracking-widest text-sm md:text-base text-cocoa/70 mb-8 uppercase">
              ALL ABOUT MINA &amp; SANA
            </p>
 
