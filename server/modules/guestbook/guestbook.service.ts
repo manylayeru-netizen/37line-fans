@@ -1,0 +1,207 @@
+import {
+  Injectable,
+  Inject,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DRIZZLE_DATABASE } from '@server/database/database.module';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { eq, desc, count } from 'drizzle-orm';
+import { guestbookNotes } from '@server/database/tables';
+import type {
+  GuestbookNote,
+  CreateGuestbookNoteRequest,
+  PagedResponse,
+} from '@shared/api.interface';
+import { ContentFilterService } from '@server/common/services/content-filter.service';
+import { randomUUID } from 'crypto';
+
+type NoteStatus = 'pending' | 'approved' | 'rejected';
+
+@Injectable()
+export class GuestbookService {
+  private readonly logger = new Logger(GuestbookService.name);
+
+  constructor(
+    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    private readonly contentFilter: ContentFilterService,
+  ) {}
+
+  /** 已审核留言列表（公开） */
+  async getApprovedNotes(
+    page: number,
+    pageSize: number,
+  ): Promise<PagedResponse<GuestbookNote>> {
+    const offset: number = (page - 1) * pageSize;
+
+    const [totalResult, notes] = await Promise.all([
+      this.db
+        .select({ count: count() })
+        .from(guestbookNotes)
+        .where(eq(guestbookNotes.status, 'approved')),
+      this.db
+        .select()
+        .from(guestbookNotes)
+        .where(eq(guestbookNotes.status, 'approved'))
+        .orderBy(desc(guestbookNotes.createdAt))
+        .limit(pageSize)
+        .offset(offset),
+    ]);
+
+    const total: number = Number(totalResult[0]?.count ?? 0);
+
+    return {
+      items: notes.map((n) => this.mapNote(n)),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  /** 提交留言（公开/匿名） */
+  async createNote(dto: CreateGuestbookNoteRequest): Promise<GuestbookNote> {
+    const filterResult = this.contentFilter.filter(dto.content);
+    if (!filterResult.clean) {
+      throw new BadRequestException(
+        `留言包含敏感词：${filterResult.foundWords.join('、')}`,
+      );
+    }
+
+    if (dto.authorName) {
+      const nameFilter = this.contentFilter.filter(dto.authorName);
+      if (!nameFilter.clean) {
+        throw new BadRequestException(
+          `昵称包含敏感词：${nameFilter.foundWords.join('、')}`,
+        );
+      }
+    }
+
+    const noteId: string = randomUUID();
+    const authorName: string = dto.authorName || '匿名访客';
+    const noteColor: string = dto.noteColor || '#FFE4B5';
+    const now: Date = new Date();
+
+    await this.db.insert(guestbookNotes).values({
+      id: noteId,
+      authorName,
+      content: dto.content,
+      noteShape: dto.noteShape,
+      noteColor,
+      status: 'pending',
+    });
+
+    this.logger.log(`留言提交成功，id=${noteId}`);
+    return {
+      id: noteId,
+      authorName,
+      content: dto.content,
+      noteShape: dto.noteShape as GuestbookNote['noteShape'],
+      noteColor,
+      positionX: 0,
+      positionY: 0,
+      status: 'pending',
+      createdAt: now.toISOString(),
+    };
+  }
+
+  /** 管理员列表 */
+  async getAdminNotes(
+    page: number,
+    pageSize: number,
+    status?: string,
+  ): Promise<PagedResponse<GuestbookNote>> {
+    const offset: number = (page - 1) * pageSize;
+    const filterStatus: NoteStatus | undefined =
+      status && status !== 'all' ? (status as NoteStatus) : undefined;
+
+    const whereCondition = filterStatus
+      ? eq(guestbookNotes.status, filterStatus)
+      : undefined;
+
+    const baseQuery = whereCondition
+      ? this.db.select().from(guestbookNotes).where(whereCondition)
+      : this.db.select().from(guestbookNotes);
+
+    const [totalResult, notes] = await Promise.all([
+      whereCondition
+        ? this.db
+            .select({ count: count() })
+            .from(guestbookNotes)
+            .where(whereCondition)
+        : this.db.select({ count: count() }).from(guestbookNotes),
+      baseQuery.orderBy(desc(guestbookNotes.createdAt)).limit(pageSize).offset(offset),
+    ]);
+
+    const total: number = Number(totalResult[0]?.count ?? 0);
+
+    return {
+      items: notes.map((n) => this.mapNote(n)),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  /** 审核通过 */
+  async approveNote(id: string): Promise<GuestbookNote> {
+    const updated = await this.db
+      .update(guestbookNotes)
+      .set({ status: 'approved' })
+      .where(eq(guestbookNotes.id, id))
+      .returning();
+
+    if (updated.length === 0) {
+      throw new NotFoundException('留言不存在');
+    }
+
+    this.logger.log(`留言审核通过，id=${id}`);
+    return this.mapNote(updated[0]);
+  }
+
+  /** 审核拒绝 */
+  async rejectNote(id: string): Promise<GuestbookNote> {
+    const updated = await this.db
+      .update(guestbookNotes)
+      .set({ status: 'rejected' })
+      .where(eq(guestbookNotes.id, id))
+      .returning();
+
+    if (updated.length === 0) {
+      throw new NotFoundException('留言不存在');
+    }
+
+    this.logger.log(`留言审核拒绝，id=${id}`);
+    return this.mapNote(updated[0]);
+  }
+
+  /** 物理删除 */
+  async deleteNote(id: string): Promise<void> {
+    const deleted = await this.db
+      .delete(guestbookNotes)
+      .where(eq(guestbookNotes.id, id))
+      .returning({ id: guestbookNotes.id });
+
+    if (deleted.length === 0) {
+      throw new NotFoundException('留言不存在');
+    }
+
+    this.logger.log(`留言已删除，id=${id}`);
+  }
+
+  private mapNote(
+    row: typeof guestbookNotes.$inferSelect,
+  ): GuestbookNote {
+    return {
+      id: row.id,
+      authorName: row.authorName,
+      content: row.content,
+      noteShape: row.noteShape as GuestbookNote['noteShape'],
+      noteColor: row.noteColor ?? '#FFE4B5',
+      positionX: row.positionX ?? 0,
+      positionY: row.positionY ?? 0,
+      status: row.status as GuestbookNote['status'],
+      createdAt: row.createdAt.toISOString(),
+    };
+  }
+}

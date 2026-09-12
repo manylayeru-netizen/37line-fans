@@ -1,0 +1,369 @@
+:root {
+  --button-outline: rgba(107, 79, 58, .10);
+  --badge-outline: rgba(107, 79, 58, .05);
+  --opaque-button-border-intensity: -8;
+  --elevate-1: rgba(107, 79, 58, .04);
+  --elevate-2: rgba(107, 79, 58, .10);
+
+  /* 手帐日记风格配色 */
+  --background: hsl(44 100% 94%);
+  --foreground: hsl(28 30% 32%);
+  --card: hsl(40 100% 97%);
+  --card-foreground: hsl(28 30% 32%);
+  --popover: hsl(40 100% 98%);
+  --popover-foreground: hsl(28 30% 32%);
+  --primary: hsl(26 86% 67%);
+  --primary-foreground: hsl(28 30% 98%);
+  --secondary: hsl(207 28% 60%);
+  --secondary-foreground: hsl(28 30% 98%);
+  --muted: hsl(36 50% 90%);
+  --muted-foreground: hsl(28 20% 45%);
+  --accent: hsl(180 38% 76%);
+  --accent-foreground: hsl(28 30% 28%);
+  --info: hsl(207 28% 60%);
+  --info-foreground: hsl(28 30% 98%);
+  --destructive: hsl(0 70% 60%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --success: hsl(140 40% 55%);
+  --success-foreground: hsl(115 77% 97%);
+  --warning: hsl(38 90% 55%);
+  --warning-foreground: hsl(33 100% 96%);
+  --border: hsl(36 40% 80%);
+  --input: hsl(36 40% 82%);
+  --ring: hsl(26 86% 67%);
+  --chart-1: hsl(26 86% 67%);
+  --chart-2: hsl(207 28% 60%);
+  --chart-3: hsl(180 38% 76%);
+  --chart-4: hsl(340 70% 78%);
+  --chart-5: hsl(45 100% 65%);
+  --sidebar: hsl(40 100% 92%);
+  --sidebar-foreground: hsl(28 30% 32%);
+  --sidebar-primary: hsl(26 86% 67%);
+  --sidebar-primary-foreground: hsl(28 30% 98%);
+  --sidebar-accent: hsl(40 100% 88%);
+  --sidebar-accent-foreground: hsl(28 30% 32%);
+  --sidebar-border: hsl(36 40% 80%);
+  --sidebar-ring: hsl(26 86% 67%);
+
+  /* 手帐专用色 */
+  --cream-yellow: #FFF3D6;
+  --shiba-orange: #F4A261;
+  --penguin-blue: #7D9BB5;
+  --cocoa-brown: #6B4F3A;
+  --mint-green: #A8DADC;
+  --paper-white: #FFFAF0;
+  --tape-pink: #F8C8DC;
+  --tape-blue: #B8D4E3;
+  --grid-gray: #E8DDD0;
+  --ink-brown: #4A3728;
+
+  --primary-border: hsl(from hsl(26 86% 67%) h s calc(l + var(--opaque-button-border-intensity)));
+  --secondary-border: hsl(from hsl(207 28% 60%) h s calc(l + var(--opaque-button-border-intensity)));
+  --destructive-border: hsl(from hsl(0 70% 60%) h s calc(l + var(--opaque-button-border-intensity)));
+  --accent-border: hsl(from hsl(180 38% 76%) h s calc(l + var(--opaque-button-border-intensity)));
+  --muted-border: hsl(from hsl(36 50% 90%) h s calc(l + var(--opaque-button-border-intensity)));
+
+  --font-sans:
+    'Noto Sans SC', 'PingFang SC', 'Microsoft Yahei',
+    'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
+    '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
+    'Tahoma', 'Arial', 'Hiragino Sans GB', 'sans-serif',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+   --font-handwriting:
+     'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft Yahei',
+     Georgia, 'Times New Roman', serif;
+   --font-serif:
+     'Noto Serif SC', 'Source Han Serif SC', ui-serif, Georgia,
+     Cambria, 'Times New Roman', Times, serif;
+  --font-mono: Source Code Pro, monospace;
+  --radius: 0.75rem;
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 16px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.08;
+  --shadow-color: #6B4F3A;
+  --shadow-2xs: 0 2px 8px 0 hsl(28 30% 32% / 0.05);
+  --shadow-xs: 0 2px 12px 0 hsl(28 30% 32% / 0.06);
+  --shadow-sm: 0 4px 12px 0 hsl(28 30% 32% / 0.08), 0 1px 3px -1px hsl(28 30% 32% / 0.06);
+  --shadow: 0 4px 16px 0 hsl(28 30% 32% / 0.10), 0 2px 4px -1px hsl(28 30% 32% / 0.06);
+  --shadow-md: 0 6px 20px 0 hsl(28 30% 32% / 0.12), 0 3px 6px -2px hsl(28 30% 32% / 0.08);
+  --shadow-lg: 0 10px 28px 0 hsl(28 30% 32% / 0.15), 0 4px 10px -2px hsl(28 30% 32% / 0.10);
+  --shadow-xl: 0 16px 40px 0 hsl(28 30% 32% / 0.18), 0 6px 16px -4px hsl(28 30% 32% / 0.12);
+  --shadow-2xl: 0 24px 60px 0 hsl(28 30% 32% / 0.22);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-cream: var(--cream-yellow);
+  --color-shiba: var(--shiba-orange);
+  --color-penguin: var(--penguin-blue);
+  --color-cocoa: var(--cocoa-brown);
+  --color-mint: var(--mint-green);
+  --color-paper: var(--paper-white);
+  --color-tape-pink: var(--tape-pink);
+  --color-tape-blue: var(--tape-blue);
+  --color-grid: var(--grid-gray);
+  --color-ink: var(--ink-brown);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --font-handwriting: var(--font-handwriting);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+}
+
+/* 全局样式 */
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  background-color: var(--cream-yellow);
+  color: var(--cocoa-brown);
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(244, 162, 97, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(125, 155, 181, 0.08) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* 格子纹背景工具类 */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(var(--grid-gray) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-gray) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* 软木板纹理 */
+.bg-corkboard {
+  background-color: #C4A484;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(107, 79, 58, 0.2) 1px, transparent 1px),
+    radial-gradient(circle at 75% 75%, rgba(107, 79, 58, 0.15) 1px, transparent 1px);
+  background-size: 12px 12px, 18px 18px;
+}
+
+/* 胶带装饰 */
+.tape-strip {
+  position: absolute;
+  width: 80px;
+  height: 24px;
+  background: var(--tape-pink);
+  opacity: 0.7;
+  transform: rotate(-3deg);
+  top: -10px;
+  left: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tape-strip-blue {
+  background: var(--tape-blue);
+  transform: rotate(3deg);
+  left: auto;
+  right: 20px;
+}
+
+/* 卡片摇晃动画 */
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+.card-wobble:hover {
+  animation: wobble 0.4s ease-in-out;
+}
+
+/* 手写体 */
+.font-handwriting {
+  font-family: var(--font-handwriting);
+}
+
+/* 便签纸效果 */
+.polaroid-frame {
+  background: white;
+  padding: 12px 12px 40px 12px;
+  box-shadow: 0 4px 12px rgba(107, 79, 58, 0.2);
+  border-radius: 4px;
+}
+
+/* 丝带书签导航 */
+.ribbon-nav-item {
+  position: relative;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  transform-origin: top center;
+}
+
+.ribbon-nav-item:hover {
+  transform: scaleY(1.05);
+  padding-bottom: 16px;
+}
+
+.ribbon-nav-item.active {
+  transform: scaleY(1.08);
+  padding-bottom: 20px;
+  font-weight: 600;
+}
+
+/* 滚动回弹 */
+@layer utilities {
+  .scroll-bounce {
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+  }
+}
+
+/* 行数限制 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* elevation system (保留自原主题) */
+@layer utilities {
+  input[type="search"]::-webkit-search-cancel-button {
+    @apply hidden;
+  }
+
+  [contenteditable][data-placeholder]:empty::before {
+    content: attr(data-placeholder);
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .no-default-hover-elevate {}
+  .no-default-active-elevate {}
+
+  .toggle-elevate::before,
+  .toggle-elevate-2::before {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  .toggle-elevate.toggle-elevated::before {
+    background-color: var(--elevate-2);
+  }
+
+  .border.toggle-elevate::before {
+    inset: -1px;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate),
+  .active-elevate:not(.no-default-active-elevate),
+  .hover-elevate-2:not(.no-default-hover-elevate),
+  .active-elevate-2:not(.no-default-active-elevate) {
+    position: relative;
+    z-index: 0;
+  }
+
+  .hover-elevate:not(.no-default-hover-elevate)::after,
+  .active-elevate:not(.no-default-active-elevate)::after,
+  .hover-elevate-2:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:not(.no-default-active-elevate)::after {
+    content: "";
+    pointer-events: none;
+    position: absolute;
+    inset: 0px;
+    border-radius: inherit;
+    z-index: 999;
+  }
+
+  .hover-elevate:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-1);
+  }
+
+  .hover-elevate-2:hover:not(.no-default-hover-elevate)::after,
+  .active-elevate-2:active:not(.no-default-active-elevate)::after {
+    background-color: var(--elevate-2);
+  }
+
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate-2:not(.no-hover-interaction-elevate)::after,
+  .border.active-elevate-2:not(.no-active-interaction-elevate)::after,
+  .border.hover-elevate:not(.no-hover-interaction-elevate)::after {
+    inset: -1px;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build:prod",
+  "outputDirectory": "dist/client",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/[...slug]" },
+    { "source": "/((?!api/|assets/|.*\\..*).*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/[...slug].js": {
+      "maxDuration": 10,
+      "includeFiles": "dist/server/**"
+    }
+  },
+  "installCommand": "npm install"
+}

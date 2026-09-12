@@ -1,0 +1,10 @@
+{"cases":[
+  {"id":1,"priority":"p0","description":"打开首页 / ，页面非白屏，显示 37line 标题文字和丝带导航栏，手帐风格布局正常"},
+  {"id":2,"priority":"p0","description":"打开今日记录页 /diary ，页面渲染正常，显示日记列表区域（有数据或空状态提示）"},
+  {"id":3,"priority":"p0","description":"打开双人日历页 /calendar ，日历区域正常渲染"},
+  {"id":4,"priority":"p0","description":"打开收集册页 /collection ，拍立得卡片区域正常显示"},
+  {"id":5,"priority":"p1","description":"打开留言板页 /guestbook ，软木板和便签区域正常显示，有留言按钮"},
+  {"id":6,"priority":"p1","description":"打开文学鉴赏页 /literature ，帖子列表和标签筛选区域正常显示"},
+  {"id":7,"priority":"p1","description":"打开登录页 /login ，用户名密码输入框和登录按钮正常显示"},
+  {"id":8,"priority":"p1","description":"导航栏包含：今日记录、双人日历、收集册、留言板、文学鉴赏 5 个栏目"}
+]}
