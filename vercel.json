@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:prod",
+  "buildCommand": "npm run build:server && npm run build:client && if [ -f dist/client/client/index.html ]; then mv dist/client/client/index.html dist/client/index.html && rmdir dist/client/client 2>/dev/null || true; fi",
   "outputDirectory": "dist/client",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/[...slug]" },
