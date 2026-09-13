@@ -2,9 +2,9 @@
 set -e
 
 # Vercel 部署时应用从域名根路径提供服务（非 /app/<appId>/ 子路径）。
-# 构建时设 CLIENT_BASE_PATH=/，让 Vite 把 BrowserRouter basename、
-# axiosForBackend baseURL、dataloom SDK 路径等全部编译为 /，
-# 避免与 Vercel 实际路径不匹配导致路由全失配（页面空白）或 /api 请求 404。
+# 设置 CLIENT_BASE_PATH=/ 让构建时 basename 和 baseURL 编译为根路径。
+# 这是第一层保障；如果 Vercel 环境下环境变量未正确传递，
+# 下方 sed 替换作为第二层保障，直接修正构建产物。
 export CLIENT_BASE_PATH=/
 
 npm run build:server
@@ -22,20 +22,36 @@ if [ -n "$ASSETS_DIR" ]; then
   cp -r "$ASSETS_DIR" dist/output/assets
 fi
 
-# Safety net: if any asset paths still have /app/<id>/ prefix in HTML or JS
-# (e.g. from SDK compile-time constants that don't respect CLIENT_BASE_PATH),
-# strip them so paths resolve correctly on Vercel (domain root).
-find dist/output -name '*.html' -exec sed -i 's|/app/[[:alnum:]_]*/assets/|/assets/|g' {} +
-find dist/output -name '*.js' -exec sed -i 's|/app/[[:alnum:]_]*/|/|g' {} +
+# ===== 路径修正：把所有 /app/<appId>/ 前缀替换为 / =====
+# 这是 Vercel 部署的核心修复。
+# 背景：SDK 在编译时会把 CLIENT_BASE_PATH 硬编码进 JS bundle，用于：
+#   1. BrowserRouter basename — 错误的 basename 导致路由全失配，页面空白
+#   2. axiosForBackend baseURL — 错误的 baseURL 导致 /api 请求 404
+#   3. dataloom / 权限 / runtime 等 SDK 内部路径
+# 即使 CLIENT_BASE_PATH=/ 已设，这里仍做 sed 兜底，确保万无一失。
 
-# Vercel compatibility: __platform__ is a Handlebars placeholder that never
-# gets replaced on Vercel. Substitute with an empty object so JSON.parse doesn't throw.
+# HTML 中的资源路径
+find dist/output -name '*.html' -exec sed -i 's|/app/[[:alnum:]_]*/assets/|/assets/|g' {} +
+
+# JS / CSS 中的硬编码路径（basename、baseURL、SDK 内部路径等）
+find dist/output -name '*.js' -exec sed -i 's|/app/[[:alnum:]_]*/|/|g' {} +
+find dist/output -name '*.css' -exec sed -i 's|/app/[[:alnum:]_]*/|/|g' {} +
+
+# ===== Vercel 兼容：__platform__ 占位符 =====
+# __platform__ 是 Handlebars 模板变量，在妙搭平台运行时由服务端替换。
+# Vercel 上没有这个替换，会导致 JSON.parse('{{{__platform__}}}') 抛错。
+# 替换为空对象 {} 让 SDK 优雅降级。
 sed -i "s|JSON.parse('{{{__platform__}}}')|{}|g" dist/output/index.html
 
-# Vercel compatibility: set runtime guard BEFORE the SDK initializes.
-# The SDK's runtime/index.js checks `window.__FULLSTACK_RUNTIME_INITIALIZED__`
-# at module load time and skips initObservable / initServerLog / initIframeBridge
-# when it's already true. This prevents all /spark/* and __runtime__/* platform
-# API calls (observability, time offset, permissions, server logs, etc.) from
-# being made on Vercel where those endpoints don't exist.
-sed -i 's|</head>|<script>window.__FULLSTACK_RUNTIME_INITIALIZED__ = true; window._IS_Spark_RUNTIME = false;</script></head>|' dist/output/index.html
+# ===== Vercel 兼容：SDK 运行时初始化守卫 =====
+# 在 SDK 加载前设置全局变量，阻止 SDK 向不存在的平台接口发请求：
+#   - window.__FULLSTACK_RUNTIME_INITIALIZED__ = true
+#     （SDK runtime/index.js 在模块加载时检查此变量，为 true 则跳过
+#      initObservable / initServerLog / initIframeBridge 等所有平台初始化）
+#   - window._IS_Spark_RUNTIME = false
+#     （旧版 SDK 检查的变量，作为兼容兜底）
+# 这样可避免：
+#   - POST /spark/app/.../metrics/collect 405
+#   - Failed to init time offset: Unexpected token '<'
+#   - 其他 __runtime__ / __innerapi__ 端点的 404/HTML 响应
+sed -i 's|</head>|<script>window.__FULLSTACK_RUNTIME_INITIALIZED__ = true; window._IS_Spark_RUNTIME = false; window.__BASENAME_OVERRIDE__ = "/";</script></head>|' dist/output/index.html

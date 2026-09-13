@@ -1,7 +1,25 @@
 import React, { useEffect } from 'react';
 import { Route, Routes } from 'react-router-dom';
+import { getAxiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
+import { logger } from '@lark-apaas/client-toolkit/logger';
 
 import { useAuthStore } from '@client/src/store/auth.store';
+
+if (typeof window !== 'undefined') {
+  try {
+    const axios = getAxiosForBackend();
+    if (axios?.defaults?.baseURL && axios.defaults.baseURL !== '/') {
+      logger.log({
+        level: 'info',
+        args: ['[vercel] correcting axios baseURL', axios.defaults.baseURL, '->', '/'],
+        meta: { type: 'vercel-runtime' },
+      });
+      axios.defaults.baseURL = '/';
+    }
+  } catch (e) {
+    logger.error('[vercel] failed to correct axios baseURL', e);
+  }
+}
 
 import Layout from './components/Layout';
 import NotFound from './pages/NotFound/NotFound';
