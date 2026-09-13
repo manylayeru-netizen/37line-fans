@@ -3,5 +3,18 @@
 @import "./tailwind-theme.css";
 @import "./typography.css";
 
+/* 隐藏平台注入的悬浮标识/水印（Vercel 独立部署时） */
+[class*="suda"],
+[class*="miaoda"],
+[class*="platform-badge"],
+[class*="powered-by"] {
+  display: none !important;
+}
+
+/* 隐藏右下角固定定位的平台悬浮按钮 */
+body > div[style*="fixed"][style*="bottom"][style*="right"] {
+  display: none !important;
+}
+
 @source "../../node_modules/streamdown/dist/*.js";
 @config "../../tailwind.config.ts";

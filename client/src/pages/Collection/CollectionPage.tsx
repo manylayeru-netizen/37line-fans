@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Upload, User, ImagePlus, X, Loader2 } from 'lucide-react';
-import { getDataloom } from '@lark-apaas/client-toolkit/dataloom';
-import { getDefaultBucketId } from '@lark-apaas/client-toolkit/tools/storage';
+import { uploadImage } from '@client/src/utils/upload';
 import type { CollectionCard, PagedResponse } from '@shared/api.interface';
 import {
   createCollectionCard,
@@ -132,12 +131,7 @@ const CollectionPage: React.FC = () => {
     }
     setUploading(true);
     try {
-      const dataloom = await getDataloom();
-      const bucketId = getDefaultBucketId();
-      const uploadRes = await dataloom.storage
-        .from(bucketId)
-        .uploadFile(uploadFile);
-      const imageUrl: string = uploadRes.data.download_url;
+      const imageUrl: string = await uploadImage(uploadFile, 'collection');
 
       const body: {
         title: string;

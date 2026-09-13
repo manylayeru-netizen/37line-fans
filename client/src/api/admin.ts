@@ -32,7 +32,7 @@ export async function reviewApplication(
   id: string,
   data: ReviewApplicationRequest,
 ): Promise<void> {
-  await apiPatch(`/api/admin/applications/${id}/review`, data);
+  await apiPost(`/api/admin/applications/${id}/review`, data);
 }
 
 export async function getUsers(

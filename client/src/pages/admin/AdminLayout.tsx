@@ -10,7 +10,6 @@ import {
   LogOut,
   Tags,
   MessageCircle,
-  BookMarked,
   Home,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
@@ -31,7 +30,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
 
   const menuItems = [
     { path: '/admin', label: '仪表盘', icon: LayoutDashboard, end: true },
-    { path: '/admin/dailyfics', label: '每日推文', icon: BookMarked },
     { path: '/admin/calendar', label: '日历管理', icon: Calendar },
     { path: '/admin/collection', label: '照片集管理', icon: Images },
     { path: '/admin/guestbook', label: '留言审核', icon: MessageSquare },

@@ -22,7 +22,6 @@ import {
 import StickerPagination from '@client/src/components/StickerPagination';
 import { literatureApi } from '@client/src/api';
 import type { LiteraturePost } from '@shared/api.interface';
-import { showConfirm } from '@lark-apaas/client-toolkit';
 
 const STATUS_TABS = [
   { value: 'pending', label: '待审核' },
@@ -53,6 +52,7 @@ const LiteratureManage: React.FC<LiteratureManageProps> = () => {
 
   const [detailOpen, setDetailOpen] = useState<boolean>(false);
   const [selectedPost, setSelectedPost] = useState<LiteraturePost | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [rejectOpen, setRejectOpen] = useState<boolean>(false);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [actionTargetId, setActionTargetId] = useState<string>('');
@@ -132,7 +132,13 @@ const LiteratureManage: React.FC<LiteratureManageProps> = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!await showConfirm('确定要删除这篇帖子吗？此操作不可撤销。')) return;
+    setDeleteConfirm(id);
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    if (!id) return;
     try {
       await literatureApi.deletePostAdmin(id);
       toast.success('帖子已删除');
@@ -450,6 +456,37 @@ const LiteratureManage: React.FC<LiteratureManageProps> = () => {
               className="rounded-full"
             >
               确认拒绝
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="max-w-md bg-paper border-2 border-dashed border-grid rounded-2xl">
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl text-ink"
+              style={{ fontFamily: 'var(--font-handwriting)' }}
+            >
+              确认删除
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-cocoa/80">确定要删除这篇帖子吗？此操作不可撤销。</p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              className="rounded-full"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="rounded-full"
+            >
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>

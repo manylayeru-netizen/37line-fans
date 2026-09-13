@@ -23,7 +23,6 @@ import { Textarea } from '@client/src/components/ui/textarea';
 import StickerPagination from '@client/src/components/StickerPagination';
 import { diaryApi } from '@client/src/api';
 import type { DiaryEntry } from '@shared/api.interface';
-import { showConfirm } from '@lark-apaas/client-toolkit';
 
 const STATUS_TABS = [
   { value: 'pending', label: '待审核' },
@@ -58,6 +57,7 @@ const DiaryManagePage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const [editOpen, setEditOpen] = useState<boolean>(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
   const [editForm, setEditForm] = useState<{
     title: string;
@@ -174,7 +174,13 @@ const DiaryManagePage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!await showConfirm('确定要删除这篇推文吗？此操作不可撤销。')) return;
+    setDeleteConfirm(id);
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm;
+    setDeleteConfirm(null);
+    if (!id) return;
     try {
       await diaryApi.deleteDiary(id);
       toast.success('已删除');
@@ -537,6 +543,37 @@ const DiaryManagePage: React.FC = () => {
             </Button>
             <Button variant="default" onClick={handleSave}>
               保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
+        <DialogContent className="max-w-md bg-paper border-2 border-dashed border-grid rounded-2xl">
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl text-ink"
+              style={{ fontFamily: 'var(--font-handwriting)' }}
+            >
+              确认删除
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-cocoa/80">确定要删除这篇推文吗？此操作不可撤销。</p>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              className="rounded-full"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="rounded-full"
+            >
+              确认删除
             </Button>
           </DialogFooter>
         </DialogContent>

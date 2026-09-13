@@ -40,20 +40,20 @@ export async function getAdminNotes(
   params?: GuestbookListQuery,
 ): Promise<PagedResponse<GuestbookNote>> {
   const res = await apiGet<{ data: PagedResponse<GuestbookNote> }>(
-    '/api/admin/guestbook',
+    '/api/guestbook/admin',
     params,
   );
   return res.data;
 }
 
 export async function approveNote(id: string): Promise<void> {
-  await apiPatch(`/api/admin/guestbook/${id}/approve`);
+  await apiPost(`/api/guestbook/admin/${id}/approve`);
 }
 
 export async function rejectNote(id: string): Promise<void> {
-  await apiPatch(`/api/admin/guestbook/${id}/reject`);
+  await apiPost(`/api/guestbook/admin/${id}/reject`);
 }
 
 export async function deleteNote(id: string): Promise<void> {
-  await apiDelete(`/api/admin/guestbook/${id}`);
+  await apiDelete(`/api/guestbook/admin/${id}`);
 }
