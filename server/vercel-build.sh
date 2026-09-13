@@ -23,7 +23,10 @@ find dist/output -name index.html -exec sed -i 's|/app/[[:alnum:]_]*/assets/|/as
 # gets replaced on Vercel. Substitute with an empty object so JSON.parse doesn't throw.
 sed -i "s|JSON.parse('{{{__platform__}}}')|{}|g" dist/output/index.html
 
-# Vercel compatibility: tell the SDK this is NOT a Spark runtime, so it
-# skips platform API calls (/spark/*, __runtime__/*, permissions, etc.)
-# that don't exist on Vercel and would return HTML (SPA fallback).
-sed -i 's|</head>|<script>window._IS_Spark_RUNTIME = false;</script></head>|' dist/output/index.html
+# Vercel compatibility: set runtime guard BEFORE the SDK initializes.
+# The SDK's runtime/index.js checks `window.__FULLSTACK_RUNTIME_INITIALIZED__`
+# at module load time and skips initObservable / initServerLog / initIframeBridge
+# when it's already true. This prevents all /spark/* and __runtime__/* platform
+# API calls (observability, time offset, permissions, server logs, etc.) from
+# being made on Vercel where those endpoints don't exist.
+sed -i 's|</head>|<script>window.__FULLSTACK_RUNTIME_INITIALIZED__ = true; window._IS_Spark_RUNTIME = false;</script></head>|' dist/output/index.html
