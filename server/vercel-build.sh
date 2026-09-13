@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Vercel 部署时应用从域名根路径提供服务（非 /app/<appId>/ 子路径）。
+# 构建时设 CLIENT_BASE_PATH=/，让 Vite 把 BrowserRouter basename、
+# axiosForBackend baseURL、dataloom SDK 路径等全部编译为 /，
+# 避免与 Vercel 实际路径不匹配导致路由全失配（页面空白）或 /api 请求 404。
+export CLIENT_BASE_PATH=/
+
 npm run build:server
 npm run build:client
 
@@ -16,8 +22,11 @@ if [ -n "$ASSETS_DIR" ]; then
   cp -r "$ASSETS_DIR" dist/output/assets
 fi
 
-# Fix asset paths: /app/<appId>/assets/ -> /assets/
-find dist/output -name index.html -exec sed -i 's|/app/[[:alnum:]_]*/assets/|/assets/|g' {} +
+# Safety net: if any asset paths still have /app/<id>/ prefix in HTML or JS
+# (e.g. from SDK compile-time constants that don't respect CLIENT_BASE_PATH),
+# strip them so paths resolve correctly on Vercel (domain root).
+find dist/output -name '*.html' -exec sed -i 's|/app/[[:alnum:]_]*/assets/|/assets/|g' {} +
+find dist/output -name '*.js' -exec sed -i 's|/app/[[:alnum:]_]*/|/|g' {} +
 
 # Vercel compatibility: __platform__ is a Handlebars placeholder that never
 # gets replaced on Vercel. Substitute with an empty object so JSON.parse doesn't throw.
