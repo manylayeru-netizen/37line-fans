@@ -1,26 +1,29 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { Response } from 'express';
 import { BusinessException } from '../interfaces/exception.interface';
 import { HTTP_STATUS_TO_RESPONSE_CODE_MAP, ResponseCode } from '../constants/api_response_code';
 import { ApiErrorResponse } from '../interfaces/api_response.interface';
 
-// 全局异常过滤器，用于捕获所有未处理的异常
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger('GlobalExceptionFilter');
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-     
-    // 如果响应头已发送，则不处理
+    const request = ctx.getRequest<Request>();
+
     if (response.headersSent) {
       return;
     }
+
+    const method = (request as { method?: string }).method || 'UNKNOWN';
+    const url = (request as { url?: string }).url || 'UNKNOWN';
 
     let errorResponse: Omit<ApiErrorResponse, 'httpStatus'>;
     let httpStatus: HttpStatus;
 
     if (exception instanceof BusinessException) {
-      // 业务异常
       httpStatus = exception.httpStatus;
       errorResponse = {
         error: {
@@ -31,8 +34,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           timestamp: Date.now(),
         },
       };
+      this.logger.warn(`[${method}] ${url} -> ${httpStatus} ${exception.message}`);
     } else if (exception instanceof HttpException) {
-      // HTTP异常
       httpStatus = exception.getStatus() as HttpStatus;
       const exceptionResponse = exception.getResponse();
 
@@ -44,13 +47,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           timestamp: Date.now(),
         },
       };
+      this.logger.warn(`[${method}] ${url} -> ${httpStatus} ${exception.message}`);
     } else if (
       typeof exception === 'object' &&
       exception !== null &&
       (exception as { code?: unknown }).code === '22P02'
     ) {
-      // Postgres invalid_text_representation：路径/查询参数与列类型不匹配（最常见是非法 UUID）
-      // 与「合法 UUID 但记录不存在」走同一条 not-found 语义，避免 500 噪声
       httpStatus = HttpStatus.NOT_FOUND;
       errorResponse = {
         error: {
@@ -59,18 +61,34 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           timestamp: Date.now(),
         },
       };
+      this.logger.warn(`[${method}] ${url} -> 404 (PG 22P02 invalid_text_representation)`);
     } else {
-      // 未知异常
       httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+      const errorMessage =
+        exception instanceof Error
+          ? exception.message
+          : typeof exception === 'string'
+            ? exception
+            : '服务器内部错误';
+      const errorStack = exception instanceof Error ? exception.stack : undefined;
+      const errorCode =
+        typeof exception === 'object' && exception !== null
+          ? (exception as { code?: string }).code
+          : undefined;
+
       errorResponse = {
         error: {
           code: ResponseCode.INTERNAL_ERROR,
-          message: '服务器内部错误',
-          stack: (exception as Error).stack,
-          cause: (exception as Error).cause as string,
+          message: errorMessage,
+          details: errorCode ? `error_code: ${errorCode}` : undefined,
           timestamp: Date.now(),
         },
       };
+
+      this.logger.error(
+        `[${method}] ${url} -> 500 ${errorMessage}`,
+        errorStack || JSON.stringify(exception),
+      );
     }
 
     response.status(httpStatus).json(errorResponse);

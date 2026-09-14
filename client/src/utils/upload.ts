@@ -16,7 +16,7 @@ export async function uploadImage(
     },
   });
 
-  const data = response.data as { code: number; data?: { url: string }; message?: string };
+  const data = response.data as { code: number; data?: { url: string; mode?: string }; message?: string };
 
   if (data.code !== 0 || !data.data?.url) {
     throw new Error(data.message || '上传失败');

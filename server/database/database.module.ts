@@ -14,6 +14,15 @@ function getDatabaseUrl(): string {
   return databaseUrl;
 }
 
+function isNeonLikeUrl(url: string): boolean {
+  return (
+    url.includes('neon.tech') ||
+    url.includes('neon.db') ||
+    url.includes('vercel') ||
+    url.includes('sslmode=require')
+  );
+}
+
 @Global()
 @Module({})
 export class DatabaseModule {
@@ -36,24 +45,36 @@ export class DatabaseModule {
           if (!url) {
             throw new Error(
               'DATABASE_URL environment variable is required. ' +
-              'Please set it to your PostgreSQL connection string.',
+                'Please set it to your PostgreSQL connection string.',
             );
           }
 
-          const sslRequired =
-            url.includes('sslmode=require') ||
-            url.includes('neon.tech') ||
-            url.includes('vercel');
+          const neonLike = isNeonLikeUrl(url);
+          const sslMode =
+            neonLike || url.includes('sslmode=require')
+              ? 'require'
+              : url.includes('sslmode=disable')
+                ? false
+                : undefined;
+
+          DatabaseModule.logger.log(
+            `Initializing database connection (neon=${neonLike}, ssl=${sslMode ?? 'default'})`,
+          );
 
           const sql = postgres(url, {
             max: 1,
-            ssl: sslRequired ? 'require' : undefined,
+            ssl: sslMode === 'require' ? { rejectUnauthorized: false } : sslMode,
             idle_timeout: 5,
-            connect_timeout: 10,
+            connect_timeout: 15,
+            max_lifetime: 60 * 10,
+            connection: {
+              application_name: 'vercel-serverless',
+            },
+            onnotice: () => {},
           });
 
           const db = drizzle(sql);
-          this.logger.log('Database connection established (standalone mode)');
+          DatabaseModule.logger.log('Database connection pool created (lazy connect)');
           return db;
         },
       },

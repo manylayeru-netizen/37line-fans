@@ -4,15 +4,40 @@
 @import "./typography.css";
 
 /* 隐藏平台注入的悬浮标识/水印（Vercel 独立部署时） */
-[class*="suda"],
+[id*="miaoda"],
+[id*="suda"],
+[id*="lark"],
+[id*="apaas"],
+[id*="platform-badge"],
+[id*="watermark"],
+[id*="floating"],
 [class*="miaoda"],
+[class*="suda"],
+[class*="lark-apaas"],
 [class*="platform-badge"],
-[class*="powered-by"] {
+[class*="powered-by"],
+[class*="watermark"],
+[class*="floating-btn"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 右下角固定定位的平台悬浮元素（inline style 方式注入） */
+body > div[style*="fixed"][style*="bottom"][style*="right"],
+body > div[style*="position: fixed"][style*="bottom:"] {
   display: none !important;
 }
 
-/* 隐藏右下角固定定位的平台悬浮按钮 */
-body > div[style*="fixed"][style*="bottom"][style*="right"] {
+/* 平台 iframe 容器 */
+iframe[src*="miaoda"],
+iframe[src*="suda"],
+iframe[src*="lark"],
+iframe[src*="apaas"] {
   display: none !important;
 }
 
