@@ -1,10 +1,17 @@
 -- =====================================================
--- 37line 手帐日记 · 企鹅与柴犬的日常 — 数据库初始化脚本
--- 适用于 PostgreSQL 14+（Neon / Vercel Postgres / 自建 PG）
--- 首次部署时执行：psql "$DATABASE_URL" -f init.sql
+-- 37line 手帐日记 · 数据库迁移 / 修复脚本
+-- 在 Neon SQL Editor 中执行，修复旧表结构，不删除已有数据
+-- 完全幂等：重复执行不会报错、不会清空数据
+-- =====================================================
+-- 用途：
+--   1. 首次部署：从零创建所有表、索引、默认数据
+--   2. 旧库升级：仅补齐缺失的列和索引，保留所有已有数据
+--
+-- 执行方式：
+--   - 方式一：在 Neon Console → SQL Editor 中直接粘贴执行
+--   - 方式二：命令行：psql "$DATABASE_URL" -f migrate.sql
 -- =====================================================
 
--- 扩展（如已安装则跳过）
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =====================================================
@@ -72,13 +79,24 @@ CREATE TABLE IF NOT EXISTS literature_posts (
     author_user_id UUID,
     reviewed_at TIMESTAMPTZ(3),
     _created_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    _updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (author_user_id) REFERENCES site_users (id) ON DELETE SET NULL
+    _updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_lit_posts_status ON literature_posts (status);
 CREATE INDEX IF NOT EXISTS idx_lit_posts_created ON literature_posts (_created_at);
 CREATE INDEX IF NOT EXISTS idx_lit_posts_author ON literature_posts (author_user_id);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'literature_posts_author_user_id_fkey'
+    ) THEN
+        ALTER TABLE literature_posts
+        ADD CONSTRAINT literature_posts_author_user_id_fkey
+        FOREIGN KEY (author_user_id) REFERENCES site_users (id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS literature_post_tags (
     post_id UUID NOT NULL,
@@ -96,13 +114,35 @@ CREATE TABLE IF NOT EXISTS literature_comments (
     guest_name VARCHAR(100),
     status VARCHAR(20) NOT NULL DEFAULT 'approved',
     _created_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    _updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES literature_posts (id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES site_users (id) ON DELETE SET NULL
+    _updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_lit_comments_post ON literature_comments (post_id);
 CREATE INDEX IF NOT EXISTS idx_lit_comments_created ON literature_comments (_created_at);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'literature_comments_post_id_fkey'
+    ) THEN
+        ALTER TABLE literature_comments
+        ADD CONSTRAINT literature_comments_post_id_fkey
+        FOREIGN KEY (post_id) REFERENCES literature_posts (id) ON DELETE CASCADE;
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'literature_comments_user_id_fkey'
+    ) THEN
+        ALTER TABLE literature_comments
+        ADD CONSTRAINT literature_comments_user_id_fkey
+        FOREIGN KEY (user_id) REFERENCES site_users (id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- =====================================================
 -- 3. 今日记录 / 日记
@@ -130,6 +170,14 @@ CREATE TABLE IF NOT EXISTS diary_entries (
 CREATE INDEX IF NOT EXISTS idx_diary_entries_date ON diary_entries (entry_date);
 CREATE INDEX IF NOT EXISTS idx_diary_entries_status ON diary_entries (status);
 CREATE INDEX IF NOT EXISTS idx_diary_entries_completion ON diary_entries (completion_status);
+
+-- 补齐 diary_entries 可能缺失的列（旧库升级用）
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS author VARCHAR(255) DEFAULT '';
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS source_platform VARCHAR(100);
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS completion_status VARCHAR(20) DEFAULT 'completed';
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS content_warnings TEXT[] DEFAULT '{}';
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS character_background TEXT;
+ALTER TABLE diary_entries ADD COLUMN IF NOT EXISTS recommendation_reason TEXT;
 
 -- =====================================================
 -- 4. 双人日历
@@ -201,6 +249,7 @@ CREATE INDEX IF NOT EXISTS idx_guestbook_created ON guestbook_notes (_created_at
 
 -- 默认管理员：admin / admin123
 -- 首次登录后请立即修改密码！
+-- password_hash = sha256('admin123' + '37line_salt')
 INSERT INTO site_users (username, password_hash, role, display_name, status)
 VALUES (
     'admin',
@@ -221,8 +270,17 @@ INSERT INTO literature_tags (name, slug, color) VALUES
 ON CONFLICT (slug) DO NOTHING;
 
 -- =====================================================
--- 提示
+-- 迁移完成验证
 -- =====================================================
--- admin / admin123 的 password_hash 计算方式：
---   sha256('admin123' + '37line_salt')
--- 如果需要重置，可在管理后台操作或手动更新 password_hash 字段。
+-- 执行完毕后，可以运行以下查询确认所有列都存在：
+--
+-- SELECT column_name, data_type
+-- FROM information_schema.columns
+-- WHERE table_name = 'diary_entries'
+-- ORDER BY ordinal_position;
+--
+-- 正常应包含 16 列：
+--   id, title, content, weather, entry_date, illustration_url,
+--   status, sort_order, author, source_platform, completion_status,
+--   content_warnings, character_background, recommendation_reason,
+--   _created_at, _updated_at
