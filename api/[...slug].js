@@ -1,5 +1,36 @@
 const { NestFactory } = require('@nestjs/core');
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://37line.fans',
+  'https://www.37line.fans',
+  'https://37line-fans.vercel.app',
+];
+
+const VERCEL_PREVIEW_REGEX = /^https:\/\/.+\.vercel\.app$/;
+
+function getAllowedOriginFn(envOrigin) {
+  const envOrigins = envOrigin
+    ? envOrigin.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const staticOrigins = [...DEFAULT_ALLOWED_ORIGINS, ...envOrigins];
+
+  return (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (staticOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    if (VERCEL_PREVIEW_REGEX.test(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
+  };
+}
+
 let cachedApp = null;
 let initError = null;
 
@@ -16,8 +47,12 @@ async function getApp() {
     });
 
     app.enableCors({
-      origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+      origin: getAllowedOriginFn(process.env.CORS_ORIGIN),
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'x-larkgw-suda-webuser'],
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
     });
 
     const rawBodyBuffer = require('body-parser').raw({
@@ -66,7 +101,7 @@ module.exports = async function handler(req, res) {
     instance(req, res);
   } catch (error) {
     console.error(`[Vercel] Handler error for ${req.method} ${req.url}:`, error);
-    console.error(`[Vercel] Stack:`, error && error.stack);
+    console.error('[Vercel] Stack:', error && error.stack);
 
     const statusCode = error.status || error.statusCode || 500;
     const errorMessage = error.message || 'Internal Server Error';
