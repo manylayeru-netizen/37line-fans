@@ -4,12 +4,12 @@ import { submitDiary } from '@client/src/api/diary';
 import PageHeader from '@client/src/components/PageHeader';
 
 const weatherOptions = [
-  { value: 'sunny', label: '☀️ 晴天' },
-  { value: 'cloudy', label: '☁️ 多云' },
-  { value: 'rainy', label: '🌧️ 雨天' },
-  { value: 'snowy', label: '❄️ 雪天' },
-  { value: 'night', label: '🌙 夜晚' },
-  { value: 'windy', label: '🍃 微风' },
+  { value: 'sunny', label: '晴天' },
+  { value: 'cloudy', label: '多云' },
+  { value: 'rainy', label: '雨天' },
+  { value: 'snowy', label: '雪天' },
+  { value: 'night', label: '夜晚' },
+  { value: 'windy', label: '微风' },
 ];
 
 const contentWarningOptions = [

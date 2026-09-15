@@ -5,18 +5,6 @@ import { getDiaryDetail } from '@client/src/api/diary';
 import LoadingSpinner from '@client/src/components/LoadingSpinner';
 import ErrorState from '@client/src/components/ErrorState';
 
-const weatherEmoji = (weather: string): string => {
-  const map: Record<string, string> = {
-    sunny: '☀️',
-    cloudy: '☁️',
-    rainy: '🌧️',
-    snowy: '❄️',
-    night: '🌙',
-    windy: '🍃',
-  };
-  return map[weather] || weather || '☀️';
-};
-
 const formatFullDate = (dateStr: string): string => {
   const d = new Date(dateStr);
   const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
@@ -69,7 +57,6 @@ const DiaryDetailPage: React.FC = () => {
             <div className="absolute -top-2 right-12 w-20 h-5 bg-tape-blue opacity-70 rotate-6 shadow-sm" />
 
              <header className="text-center mb-8 pb-8 border-b-2 border-dashed border-grid">
-               <div className="text-5xl mb-3">{weatherEmoji(entry.weather)}</div>
                <p className="font-handwriting text-xl text-cocoa/70 mb-2">{formatFullDate(entry.entryDate)}</p>
                <h1 className="font-handwriting text-4xl md:text-5xl text-ink mb-4">{entry.title}</h1>
                <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-cocoa/60">
@@ -117,15 +104,11 @@ const DiaryDetailPage: React.FC = () => {
                </div>
              )}
 
-             <div className="font-handwriting text-lg md:text-xl leading-loose text-cocoa/90 whitespace-pre-wrap">
-               {entry.content}
-             </div>
+              <div className="font-handwriting text-lg md:text-xl leading-loose text-cocoa/90 whitespace-pre-wrap">
+                {entry.content}
+              </div>
 
-            <footer className="mt-12 pt-6 border-t-2 border-dashed border-grid text-right">
-              <p className="font-handwriting text-xl text-shiba">—— 37line 的小日子</p>
-            </footer>
-
-            <div className="absolute -bottom-2 left-1/3 w-16 h-4 bg-mint opacity-60 rotate-3 rounded-sm" />
+             <div className="absolute -bottom-2 left-1/3 w-16 h-4 bg-mint opacity-60 rotate-3 rounded-sm" />
           </article>
         )}
       </div>

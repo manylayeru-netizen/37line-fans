@@ -435,12 +435,12 @@ const DiaryManagePage: React.FC = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sunny">☀️ 晴天</SelectItem>
-                    <SelectItem value="cloudy">☁️ 多云</SelectItem>
-                    <SelectItem value="rainy">🌧️ 雨天</SelectItem>
-                    <SelectItem value="snowy">❄️ 雪天</SelectItem>
-                    <SelectItem value="night">🌙 夜晚</SelectItem>
-                    <SelectItem value="windy">🍃 微风</SelectItem>
+                    <SelectItem value="sunny">晴天</SelectItem>
+                    <SelectItem value="cloudy">多云</SelectItem>
+                    <SelectItem value="rainy">雨天</SelectItem>
+                    <SelectItem value="snowy">雪天</SelectItem>
+                    <SelectItem value="night">夜晚</SelectItem>
+                    <SelectItem value="windy">微风</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

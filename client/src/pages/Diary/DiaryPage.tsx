@@ -9,18 +9,6 @@ import LoadingSpinner from '@client/src/components/LoadingSpinner';
 import ErrorState from '@client/src/components/ErrorState';
 import StickerPagination from '@client/src/components/StickerPagination';
 
-const weatherEmoji = (weather: string): string => {
-  const map: Record<string, string> = {
-    sunny: '☀️',
-    cloudy: '☁️',
-    rainy: '🌧️',
-    snowy: '❄️',
-    night: '🌙',
-    windy: '🍃',
-  };
-  return map[weather] || weather || '☀️';
-};
-
 const formatDate = (dateStr: string): { day: string; month: string; year: string } => {
   const d = new Date(dateStr);
   return {
@@ -111,9 +99,8 @@ const DiaryPage: React.FC = () => {
                         <div className="flex-shrink-0 text-center min-w-[72px]">
                           <div className="font-handwriting text-5xl text-shiba leading-none">{date.day}</div>
                           <div className="text-sm text-cocoa/70 mt-1">{date.month}</div>
-                          <div className="text-xs text-cocoa/50">{date.year}</div>
-                          <div className="text-2xl mt-2">{weatherEmoji(entry.weather)}</div>
-                        </div>
+                           <div className="text-xs text-cocoa/50">{date.year}</div>
+                         </div>
                          <div className="flex-1 border-l-2 border-dashed border-grid pl-6">
                            <h2 className="font-handwriting text-2xl md:text-3xl text-ink mb-2">
                              {entry.title}
