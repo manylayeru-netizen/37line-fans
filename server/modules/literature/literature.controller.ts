@@ -123,10 +123,10 @@ export class LiteratureController {
   @UseGuards(AuthGuard)
   async createPost(
     @Body() body: CreateLiteraturePostRequest,
-    @Req() req: Request & { user: { userId: string } },
+    @Req() req: Request & { user: { userId: string; role?: string } },
   ): Promise<ApiResponse<LiteraturePost>> {
-    const { userId } = req.user;
-    const result = await this.literatureService.createPost(body, userId);
+    const { userId, role } = req.user;
+    const result = await this.literatureService.createPost(body, userId, role);
     return { code: 0, message: 'ok', data: result };
   }
 

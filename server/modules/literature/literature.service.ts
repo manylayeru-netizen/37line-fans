@@ -219,7 +219,9 @@ export class LiteratureService {
   async createPost(
     dto: CreateLiteraturePostRequest,
     authorUserId: string,
+    userRole?: string,
   ): Promise<LiteraturePost> {
+    const isAdmin: boolean = userRole === 'admin';
     // 敏感词检测
     const contentCheck = this.contentFilter.filter(dto.content);
     if (!contentCheck.clean) {
@@ -265,7 +267,7 @@ export class LiteratureService {
           content: dto.content,
           recommendationReason: dto.recommendationReason,
           authorUserId,
-          status: 'pending',
+          status: isAdmin ? 'published' : 'pending',
         })
         .returning();
 
@@ -287,7 +289,9 @@ export class LiteratureService {
       return inserted[0];
     });
 
-    this.logger.log(`帖子提交成功，id=${result.id}，作者=${authorUserId}`);
+    this.logger.log(
+      `帖子提交成功，id=${result.id}，作者=${authorUserId}，status=${isAdmin ? 'published' : 'pending'}`,
+    );
     const items = await this.attachTagsToPosts([this.mapPost(result)]);
     return items[0];
   }

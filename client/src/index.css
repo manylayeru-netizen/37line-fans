@@ -4,20 +4,16 @@
 @import "./typography.css";
 
 /* 隐藏平台注入的悬浮标识/水印（Vercel 独立部署时） */
-[id*="miaoda"],
-[id*="suda"],
-[id*="lark"],
-[id*="apaas"],
-[id*="platform-badge"],
-[id*="watermark"],
-[id*="floating"],
-[class*="miaoda"],
-[class*="suda"],
-[class*="lark-apaas"],
-[class*="platform-badge"],
-[class*="powered-by"],
-[class*="watermark"],
-[class*="floating-btn"] {
+[data-custom-element*="watermark"],
+[data-custom-element*="miaoda"],
+[data-custom-element*="doubao"],
+[data-custom-element*="badge"],
+#miaoda-watermark,
+#doubao-watermark,
+div[aria-label*="妙搭"],
+div[aria-label*="生成"],
+a[href*="miaoda"],
+a[href*="doubao"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -25,11 +21,14 @@
   width: 0 !important;
   height: 0 !important;
   overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  z-index: -1 !important;
 }
 
-/* 右下角固定定位的平台悬浮元素（inline style 方式注入） */
-body > div[style*="fixed"][style*="bottom"][style*="right"],
-body > div[style*="position: fixed"][style*="bottom:"] {
+/* 命中所有含妙搭/豆包水印特征的固定定位元素 */
+div[style*="position: fixed"][style*="bottom"][style*="right"] {
   display: none !important;
 }
 

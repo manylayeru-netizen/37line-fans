@@ -56,32 +56,39 @@ const PLATFORM_BADGE_KEYWORDS = [
   'powered-by',
   'watermark',
   'floating-btn',
+  'doubao',
+  '妙搭',
+  '豆包',
 ];
 
 function removePlatformBadges(): void {
   if (typeof document === 'undefined') return;
 
-  const allElements = document.querySelectorAll(
-    'div, span, iframe, section, aside, button, a',
-  );
+  const allElements = document.querySelectorAll('*');
 
   allElements.forEach((el) => {
     if (!(el instanceof HTMLElement)) return;
-    if (el.id === 'root' || el.closest('#root')) return;
 
+    const customElement = el.getAttribute('data-custom-element') || '';
     const id = el.id.toLowerCase();
     const className = (el.className || '').toString().toLowerCase();
+    const ariaLabel = el.getAttribute('aria-label') || '';
     const style = el.getAttribute('style') || '';
+    const href = el.getAttribute('href') || '';
 
     const matchesKeyword = PLATFORM_BADGE_KEYWORDS.some(
-      (kw) => id.includes(kw) || className.includes(kw),
+      (kw) =>
+        customElement.toLowerCase().includes(kw) ||
+        id.includes(kw) ||
+        className.includes(kw) ||
+        ariaLabel.toLowerCase().includes(kw) ||
+        href.toLowerCase().includes(kw),
     );
 
     const isFixedBottomRight =
       style.includes('position: fixed') &&
-      style.includes('bottom') &&
-      style.includes('right') &&
-      !el.closest('#root');
+      (style.includes('bottom:') || style.includes('bottom ')) &&
+      (style.includes('right:') || style.includes('right '));
 
     if (matchesKeyword || isFixedBottomRight) {
       el.style.display = 'none';
@@ -91,6 +98,10 @@ function removePlatformBadges(): void {
       el.style.height = '0';
       el.style.overflow = 'hidden';
       el.style.pointerEvents = 'none';
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      el.style.top = '-9999px';
+      el.style.zIndex = '-1';
     }
   });
 }
