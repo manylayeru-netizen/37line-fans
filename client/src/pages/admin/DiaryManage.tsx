@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit, Trash2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -27,6 +27,7 @@ import type { DiaryEntry } from '@shared/api.interface';
 const STATUS_TABS = [
   { value: 'pending', label: '待审核' },
   { value: 'published', label: '已发布' },
+  { value: 'rejected', label: '已驳回' },
   { value: 'draft', label: '草稿' },
   { value: 'offline', label: '已下线' },
   { value: '', label: '全部' },
@@ -35,8 +36,9 @@ const STATUS_TABS = [
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: '待审核', className: 'bg-warning text-warning-foreground' },
   published: { label: '已发布', className: 'bg-success text-success-foreground' },
+  rejected: { label: '已驳回', className: 'bg-destructive text-destructive-foreground' },
   draft: { label: '草稿', className: 'bg-secondary text-secondary-foreground' },
-  offline: { label: '已下线', className: 'bg-destructive text-destructive-foreground' },
+  offline: { label: '已下线', className: 'bg-muted text-muted-foreground' },
 };
 
 const COMPLETION_LABELS: Record<string, string> = {
@@ -58,6 +60,9 @@ const DiaryManagePage: React.FC = () => {
 
   const [editOpen, setEditOpen] = useState<boolean>(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [rejectOpen, setRejectOpen] = useState<boolean>(false);
+  const [rejectTargetId, setRejectTargetId] = useState<string>('');
+  const [rejectReason, setRejectReason] = useState<string>('');
   const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null);
   const [editForm, setEditForm] = useState<{
     title: string;
@@ -163,6 +168,36 @@ const DiaryManagePage: React.FC = () => {
     }
   };
 
+  const handleApprove = async (id: string) => {
+    try {
+      await diaryApi.reviewDiary(id, { status: 'published' });
+      toast.success('已通过审核 ✨');
+      loadEntries();
+    } catch {
+      toast.error('操作失败，请重试');
+    }
+  };
+
+  const openRejectDialog = (id: string) => {
+    setRejectTargetId(id);
+    setRejectReason('');
+    setRejectOpen(true);
+  };
+
+  const handleReject = async () => {
+    try {
+      await diaryApi.reviewDiary(rejectTargetId, {
+        status: 'rejected',
+        rejectReason: rejectReason.trim() || '不符合收录要求',
+      });
+      toast.success('已驳回');
+      setRejectOpen(false);
+      loadEntries();
+    } catch {
+      toast.error('操作失败，请重试');
+    }
+  };
+
   const handleStatusToggle = async (entry: DiaryEntry, newStatus: 'published' | 'offline') => {
     try {
       await diaryApi.updateDiaryStatus(entry.id, newStatus);
@@ -250,6 +285,7 @@ const DiaryManagePage: React.FC = () => {
             <tr className="border-b-2 border-dashed border-grid bg-cream/30">
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">标题</th>
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">作者</th>
+              <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">投稿人</th>
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">日期</th>
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">状态</th>
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">完结</th>
@@ -283,6 +319,9 @@ const DiaryManagePage: React.FC = () => {
                   <td className="py-3 px-4 text-cocoa text-sm">
                     {entry.author || '—'}
                   </td>
+                  <td className="py-3 px-4 text-cocoa/70 text-sm">
+                    {entry.submitterName || '—'}
+                  </td>
                   <td className="py-3 px-4 text-cocoa text-sm">
                     {entry.entryDate}
                   </td>
@@ -309,13 +348,25 @@ const DiaryManagePage: React.FC = () => {
                         编辑
                       </Button>
                       {entry.status === 'pending' && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleStatusToggle(entry, 'published')}
-                        >
-                          通过
-                        </Button>
+                        <>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleApprove(entry.id)}
+                            className="bg-success hover:bg-success/90"
+                          >
+                            <Check size={14} className="mr-1" />
+                            通过
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openRejectDialog(entry.id)}
+                          >
+                            <X size={14} className="mr-1" />
+                            驳回
+                          </Button>
+                        </>
                       )}
                       {entry.status === 'published' && (
                         <Button
@@ -444,6 +495,7 @@ const DiaryManagePage: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="published">已发布</SelectItem>
                     <SelectItem value="pending">待审核</SelectItem>
+                    <SelectItem value="rejected">已驳回</SelectItem>
                     <SelectItem value="draft">草稿</SelectItem>
                     <SelectItem value="offline">已下线</SelectItem>
                   </SelectContent>
@@ -543,6 +595,46 @@ const DiaryManagePage: React.FC = () => {
             </Button>
             <Button variant="default" onClick={handleSave}>
               保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="max-w-md bg-paper border-2 border-dashed border-grid rounded-2xl">
+          <DialogHeader>
+            <DialogTitle
+              className="text-xl text-ink"
+              style={{ fontFamily: 'var(--font-handwriting)' }}
+            >
+              驳回审核
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label className="text-cocoa">请填写驳回原因</Label>
+            <Textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="请说明驳回的原因..."
+              rows={4}
+              className="w-full rounded-lg border border-grid bg-cream/30 p-3 text-sm text-cocoa focus:border-shiba focus:ring-2 focus:ring-shiba/20 outline-none resize-none"
+            />
+          </div>
+          <DialogFooter className="gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setRejectOpen(false)}
+              className="rounded-full"
+            >
+              取消
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              className="rounded-full"
+            >
+              确认驳回
             </Button>
           </DialogFooter>
         </DialogContent>

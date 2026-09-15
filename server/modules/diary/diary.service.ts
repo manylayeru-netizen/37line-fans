@@ -62,7 +62,7 @@ export class DiaryService {
       weather: row.weather ?? 'sunny',
       entryDate: row.entryDate,
       illustrationUrl: row.illustrationUrl ?? undefined,
-      status: row.status as 'published' | 'draft' | 'offline' | 'pending',
+      status: row.status as 'published' | 'draft' | 'offline' | 'pending' | 'rejected',
       sortOrder: row.sortOrder ?? 0,
       author: row.author ?? '',
       sourcePlatform: row.sourcePlatform ?? undefined,
@@ -70,6 +70,10 @@ export class DiaryService {
       contentWarnings: row.contentWarnings ?? [],
       characterBackground: row.characterBackground ?? undefined,
       recommendationReason: row.recommendationReason ?? undefined,
+      rejectReason: row.rejectReason ?? undefined,
+      reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : undefined,
+      submitterId: row.submitterId ?? undefined,
+      submitterName: row.submitterName ?? undefined,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
@@ -152,7 +156,12 @@ export class DiaryService {
     return this.toDto(rows[0]);
   }
 
-  async submit(dto: CreateDiaryDto & { submitterId?: string; submitterName?: string }): Promise<DiaryEntry> {
+  async submit(
+    dto: CreateDiaryDto & { submitterId?: string; submitterName?: string; userRole?: string },
+  ): Promise<DiaryEntry> {
+    const isAdmin: boolean = dto.userRole === 'admin';
+    const status: 'published' | 'pending' = isAdmin ? 'published' : 'pending';
+
     const rows: DiaryRow[] = await this.db
       .insert(diaryEntries)
       .values({
@@ -161,7 +170,7 @@ export class DiaryService {
         weather: dto.weather ?? 'sunny',
         entryDate: dto.entryDate,
         illustrationUrl: dto.illustrationUrl ?? null,
-        status: 'pending',
+        status,
         sortOrder: dto.sortOrder ?? 0,
         author: dto.author ?? '',
         sourcePlatform: dto.sourcePlatform ?? null,
@@ -169,10 +178,14 @@ export class DiaryService {
         contentWarnings: dto.contentWarnings ?? [],
         characterBackground: dto.characterBackground ?? null,
         recommendationReason: dto.recommendationReason ?? null,
+        submitterId: dto.submitterId ?? null,
+        submitterName: dto.submitterName ?? null,
       })
       .returning();
 
-    this.logger.log(`用户提交日记: ${rows[0].id}`);
+    this.logger.log(
+      `用户提交推文: ${rows[0].id}，角色=${dto.userRole || 'unknown'}，状态=${status}`,
+    );
     return this.toDto(rows[0]);
   }
 
@@ -227,6 +240,29 @@ export class DiaryService {
     }
 
     this.logger.log(`更新日记状态: ${id} -> ${status}`);
+    return this.toDto(rows[0]);
+  }
+
+  async review(
+    id: string,
+    status: 'published' | 'rejected',
+    rejectReason?: string,
+  ): Promise<DiaryEntry> {
+    const rows: DiaryRow[] = await this.db
+      .update(diaryEntries)
+      .set({
+        status,
+        rejectReason: status === 'rejected' ? (rejectReason ?? null) : null,
+        reviewedAt: new Date(),
+      })
+      .where(eq(diaryEntries.id, id))
+      .returning();
+
+    if (rows.length === 0) {
+      throw new NotFoundException('推文不存在');
+    }
+
+    this.logger.log(`审核推文: ${id} -> ${status}`);
     return this.toDto(rows[0]);
   }
 

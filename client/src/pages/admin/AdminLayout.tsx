@@ -8,7 +8,6 @@ import {
   UserPlus,
   LayoutDashboard,
   LogOut,
-  Tags,
   MessageCircle,
   Home,
 } from 'lucide-react';
@@ -33,16 +32,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
     { path: '/admin/calendar', label: '日历管理', icon: Calendar },
     { path: '/admin/collection', label: '照片集管理', icon: Images },
     { path: '/admin/guestbook', label: '留言审核', icon: MessageSquare },
-    {
-      path: '/admin/literature',
-      label: '推文管理',
-      icon: FileText,
-      children: [
-         { path: '/admin/literature', label: '推文审核', icon: FileText },
-        { path: '/admin/literature/comments', label: '评论管理', icon: MessageCircle },
-        { path: '/admin/literature/tags', label: '标签管理', icon: Tags },
-      ],
-    },
+    { path: '/admin/dailyfics', label: '推文管理', icon: FileText },
     { path: '/admin/users', label: '用户管理', icon: Users },
     { path: '/admin/applications', label: '注册申请', icon: UserPlus },
   ];

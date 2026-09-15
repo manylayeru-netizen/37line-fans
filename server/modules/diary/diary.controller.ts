@@ -58,7 +58,7 @@ export class DiaryController {
   @UseGuards(AuthGuard)
   @Post('submit')
   async submit(
-    @Req() req: { user: { userId: string; username: string } },
+    @Req() req: { user: { userId: string; username: string; role?: string } },
     @Body() body: {
       title: string;
       content: string;
@@ -77,6 +77,7 @@ export class DiaryController {
       ...body,
       submitterId: req.user.userId,
       submitterName: req.user.username,
+      userRole: req.user.role,
     });
     return { code: 0, message: 'ok', data };
   }
@@ -135,6 +136,20 @@ export class DiaryController {
     @Body() body: { status: 'published' | 'draft' | 'offline' },
   ): Promise<ApiResponse<DiaryEntry>> {
     const data: DiaryEntry = await this.diaryService.updateStatus(id, body.status);
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AdminGuard)
+  @Post(':id/review')
+  async review(
+    @Param('id') id: string,
+    @Body() body: { status: 'published' | 'rejected'; rejectReason?: string },
+  ): Promise<ApiResponse<DiaryEntry>> {
+    const data: DiaryEntry = await this.diaryService.review(
+      id,
+      body.status,
+      body.rejectReason,
+    );
     return { code: 0, message: 'ok', data };
   }
 

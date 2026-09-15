@@ -258,6 +258,10 @@ export const diaryEntries = pgTable('diary_entries', {
   contentWarnings: text('content_warnings').array().default([]),
   characterBackground: text('character_background'),
   recommendationReason: text('recommendation_reason'),
+  rejectReason: text('reject_reason'),
+  reviewedAt: customTimestamptz('reviewed_at', { precision: 3 }),
+  submitterId: uuid('submitter_id'),
+  submitterName: varchar('submitter_name', { length: 100 }),
   createdAt: customTimestamptz('_created_at', { precision: 3 })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -268,6 +272,7 @@ export const diaryEntries = pgTable('diary_entries', {
   index('idx_diary_entries_date').on(table.entryDate),
   index('idx_diary_entries_status').on(table.status),
   index('idx_diary_entries_completion').on(table.completionStatus),
+  index('idx_diary_entries_submitter').on(table.submitterId),
 ]);
 
 // table aliases

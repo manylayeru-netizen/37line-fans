@@ -63,3 +63,10 @@ export async function updateDiaryStatus(
 ): Promise<void> {
   await apiPatch(`/api/dailyfics/${id}/status`, { status });
 }
+
+export async function reviewDiary(
+  id: string,
+  data: { status: 'published' | 'rejected'; rejectReason?: string },
+): Promise<void> {
+  await apiPost(`/api/dailyfics/${id}/review`, data);
+}

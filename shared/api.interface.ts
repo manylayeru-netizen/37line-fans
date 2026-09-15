@@ -76,7 +76,7 @@ export interface DiaryEntry {
   weather: string;
   entryDate: string;
   illustrationUrl?: string;
-  status: 'published' | 'draft' | 'offline' | 'pending';
+  status: 'published' | 'draft' | 'offline' | 'pending' | 'rejected';
   sortOrder: number;
   author: string;
   sourcePlatform?: string;
@@ -84,6 +84,10 @@ export interface DiaryEntry {
   contentWarnings: string[];
   characterBackground?: string;
   recommendationReason?: string;
+  rejectReason?: string;
+  submitterId?: string;
+  submitterName?: string;
+  reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
