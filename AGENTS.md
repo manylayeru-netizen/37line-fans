@@ -25,9 +25,10 @@
 
 ### 字体
 
-- 标题：手写体风格 `'Ma Shan Zheng', 'ZCOOL KuaiLe', cursive`，fallback 到系统 serif
-- 正文：`'Noto Sans SC', 'PingFang SC', 'Microsoft Yahei', sans-serif`
-- 日记/便签：手写体 `'Caveat', 'Ma Shan Zheng', cursive`
+- 标题/手写体：`'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft Yahei', Georgia, 'Times New Roman', serif`（使用 `.font-handwriting` 类）
+- 正文：`'Noto Sans SC', 'PingFang SC', 'Microsoft Yahei', sans-serif`（使用 `.font-sans` 类）
+- 衬线体：`'Noto Serif SC', 'Source Han Serif SC', ui-serif, Georgia, serif`（使用 `.font-serif` 类）
+- 字体资源通过 `index.html` 中的 Google Fonts 链接加载（Ma Shan Zheng、ZCOOL KuaiLe、Caveat、Noto Sans SC）
 
 ### 间距
 

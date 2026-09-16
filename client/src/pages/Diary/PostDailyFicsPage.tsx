@@ -3,15 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { submitDiary } from '@client/src/api/diary';
 import PageHeader from '@client/src/components/PageHeader';
 
-const weatherOptions = [
-  { value: 'sunny', label: '晴天' },
-  { value: 'cloudy', label: '多云' },
-  { value: 'rainy', label: '雨天' },
-  { value: 'snowy', label: '雪天' },
-  { value: 'night', label: '夜晚' },
-  { value: 'windy', label: '微风' },
-];
-
 const contentWarningOptions = [
   { value: 'M', label: 'M' },
   { value: '主要人物死亡', label: '主要人物死亡' },
@@ -23,7 +14,6 @@ const PostDailyFicsPage: React.FC = () => {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
-    weather: 'sunny',
     entryDate: new Date().toISOString().split('T')[0],
     author: '',
     sourcePlatform: '',

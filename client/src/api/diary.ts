@@ -39,7 +39,7 @@ export async function createDiary(
 }
 
 export async function submitDiary(
-  data: { title: string; content: string; weather?: string; entryDate: string },
+  data: { title: string; content: string; entryDate: string; weather?: string },
 ): Promise<DiaryEntry> {
   const res = await apiPost<{ data: DiaryEntry }>('/api/dailyfics/submit', data);
   return res.data;

@@ -67,7 +67,6 @@ const DiaryManagePage: React.FC = () => {
   const [editForm, setEditForm] = useState<{
     title: string;
     content: string;
-    weather: string;
     entryDate: string;
     author: string;
     sourcePlatform: string;
@@ -80,7 +79,6 @@ const DiaryManagePage: React.FC = () => {
   }>({
     title: '',
     content: '',
-    weather: 'sunny',
     entryDate: '',
     author: '',
     sourcePlatform: '',
@@ -138,7 +136,6 @@ const DiaryManagePage: React.FC = () => {
     setEditForm({
       title: entry.title,
       content: entry.content,
-      weather: entry.weather,
       entryDate: entry.entryDate,
       author: entry.author || '',
       sourcePlatform: entry.sourcePlatform || '',
@@ -415,7 +412,7 @@ const DiaryManagePage: React.FC = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label className="text-cocoa/60 text-xs">日期</Label>
                 <Input
@@ -426,25 +423,6 @@ const DiaryManagePage: React.FC = () => {
                   }
                   className="mt-1"
                 />
-              </div>
-              <div>
-                <Label className="text-cocoa/60 text-xs">天气</Label>
-                <Select
-                  value={editForm.weather}
-                  onValueChange={(v) => setEditForm({ ...editForm, weather: v })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sunny">晴天</SelectItem>
-                    <SelectItem value="cloudy">多云</SelectItem>
-                    <SelectItem value="rainy">雨天</SelectItem>
-                    <SelectItem value="snowy">雪天</SelectItem>
-                    <SelectItem value="night">夜晚</SelectItem>
-                    <SelectItem value="windy">微风</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <div>

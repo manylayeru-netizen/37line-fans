@@ -63,19 +63,18 @@
   --accent-border: hsl(from hsl(180 38% 76%) h s calc(l + var(--opaque-button-border-intensity)));
   --muted-border: hsl(from hsl(36 50% 90%) h s calc(l + var(--opaque-button-border-intensity)));
 
-    --font-sans:
-     'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC',
-     'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
-     '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
-     'Tahoma', 'Arial', 'Hiragino Sans GB', system-ui, sans-serif,
-     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    --font-handwriting:
-      'Ma Shan Zheng', 'ZCOOL KuaiLe', 'Noto Serif SC', 'Source Han Serif SC',
-      'PingFang SC', 'Microsoft YaHei', 'Heiti SC',
-      Georgia, 'Times New Roman', serif;
-    --font-serif:
-      'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft YaHei',
-      ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-sans:
+    'Noto Sans SC', 'PingFang SC', 'Microsoft Yahei',
+    'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
+    '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
+    'Tahoma', 'Arial', 'Hiragino Sans GB', 'sans-serif',
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-handwriting:
+    'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft Yahei',
+    Georgia, 'Times New Roman', serif;
+  --font-serif:
+    'Noto Serif SC', 'Source Han Serif SC', ui-serif, Georgia,
+    Cambria, 'Times New Roman', Times, serif;
   --font-mono: Source Code Pro, monospace;
   --radius: 0.75rem;
   --shadow-x: 0px;

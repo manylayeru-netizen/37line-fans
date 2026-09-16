@@ -222,11 +222,11 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ========== 最新日记预览区 ========== */}
+      {/* ========== 最新推文预览区 ========== */}
       <section className="mt-12 md:mt-16">
         <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
            <SunIcon size={20} className="text-shiba sm:size-6" />
-            <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">最新消息</h2>
+            <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">最新推文</h2>
           <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
           <button
             onClick={() => navigate('/dailyfics')}
@@ -239,7 +239,7 @@ const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {latestDiaries.length === 0 ? (
             <div className="col-span-full text-center py-10 bg-paper/50 rounded-xl border-2 border-dashed border-grid">
-              <p className="font-handwriting text-xl text-cocoa/50">暂无消息，敬请期待～</p>
+              <p className="font-handwriting text-xl text-cocoa/50">暂无推文，敬请期待～</p>
             </div>
           ) : (
             latestDiaries.map((diary: DiaryEntry, idx: number) => (
@@ -252,10 +252,9 @@ const HomePage: React.FC = () => {
                 onClick={() => navigate(`/dailyfics/${diary.id}`)}
                 className="bg-paper rounded-xl p-4 sm:p-5 shadow-sm hover:shadow transition-shadow cursor-pointer card-wobble relative"
               >
-                <div className="flex items-center gap-2 mb-2 text-sm text-cocoa/60">
-                  <span className="font-mono">{diary.entryDate}</span>
-                  <span>{diary.weather}</span>
-                </div>
+                 <div className="flex items-center gap-2 mb-2 text-sm text-cocoa/60">
+                   <span className="font-mono">{diary.entryDate}</span>
+                 </div>
                 <h3 className="font-handwriting text-xl text-ink mb-2">{diary.title}</h3>
                 <p className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">
                   {diary.content.length > 100 ? `${diary.content.slice(0, 100)}…` : diary.content}
