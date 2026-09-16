@@ -60,6 +60,10 @@ echo "=== Step 4/7: 复制构建产物到 dist/output ==="
 cp "$BUILD_HTML" dist/output/index.html
 cp -r "$BUILD_ASSETS" dist/output/assets
 
+if [ -f dist/client/favicon.png ]; then
+  cp dist/client/favicon.png dist/output/favicon.png
+  echo "已复制 favicon.png"
+fi
 if [ -f dist/client/favicon.svg ]; then
   cp dist/client/favicon.svg dist/output/favicon.svg
   echo "已复制 favicon.svg"
@@ -73,10 +77,10 @@ echo "=== Step 5/7: 替换模板变量 ==="
 # 构建后的 index.html 保留了 Handlebars 模板变量，Vercel 没有服务端替换环节。
 # sed 的 & 在替换字符串中代表"匹配到的文本"，必须转义为 \&。
 sed -i \
-  -e 's|{{appName}}|37line \&middot; 手帐小世界|g' \
+  -e 's|{{appName}}|37line \&middot; Mina \&amp; Sana|g' \
   -e 's|{{appDescription}}|Mina \&amp; Sana 的手帐日记粉丝站|g' \
-  -e 's|{{{appAvatar}}}|/favicon.svg|g' \
-  -e 's|{{appAvatar}}|/favicon.svg|g' \
+  -e 's|{{{appAvatar}}}|/favicon.png|g' \
+  -e 's|{{appAvatar}}|/favicon.png|g' \
   -e 's|{{appId}}|vercel|g' \
   -e 's|{{tenantId}}||g' \
   -e 's|{{userId}}||g' \
