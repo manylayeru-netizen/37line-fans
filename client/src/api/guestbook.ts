@@ -57,3 +57,7 @@ export async function rejectNote(id: string): Promise<void> {
 export async function deleteNote(id: string): Promise<void> {
   await apiDelete(`/api/guestbook/admin/${id}`);
 }
+
+export async function deleteMyNote(id: string): Promise<void> {
+  await apiDelete(`/api/guestbook/notes/${id}`);
+}

@@ -64,6 +64,10 @@ export interface UpdateAvatarRequest {
   avatarUrl: string;
 }
 
+export interface UpdateDisplayNameRequest {
+  displayName: string;
+}
+
 export interface AdminResetPasswordRequest {
   newPassword: string;
 }
@@ -143,7 +147,7 @@ export interface GuestbookNote {
   id: string;
   authorName: string;
   content: string;
-  noteShape: 'shiba' | 'penguin' | 'heart' | 'star';
+  noteShape: string;
   noteColor: string;
   positionX: number;
   positionY: number;
@@ -154,7 +158,7 @@ export interface GuestbookNote {
 export interface CreateGuestbookNoteRequest {
   authorName?: string;
   content: string;
-  noteShape: 'shiba' | 'penguin' | 'heart' | 'star';
+  noteShape: string;
   noteColor?: string;
 }
 

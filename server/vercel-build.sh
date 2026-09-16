@@ -77,7 +77,7 @@ echo "=== Step 5/7: 替换模板变量 ==="
 # 构建后的 index.html 保留了 Handlebars 模板变量，Vercel 没有服务端替换环节。
 # sed 的 & 在替换字符串中代表"匹配到的文本"，必须转义为 \&。
 sed -i \
-  -e 's|{{appName}}|37line \&middot; Mina \&amp; Sana|g' \
+  -e 's|{{appName}}|37line · Mina \& Sana|g' \
   -e 's|{{appDescription}}|Mina \&amp; Sana 的手帐日记粉丝站|g' \
   -e 's|{{{appAvatar}}}|/favicon.png|g' \
   -e 's|{{appAvatar}}|/favicon.png|g' \

@@ -4,10 +4,11 @@ import {
   apiPatch,
 } from '@client/src/utils/api-client';
 import type {
-  LoginResponse,
-  RegisterRequest,
-  SiteUser,
-} from '@shared/api.interface';
+   LoginResponse,
+   RegisterRequest,
+   SiteUser,
+   UpdateDisplayNameRequest,
+ } from '@shared/api.interface';
 
 export async function login(
   username: string,
@@ -30,11 +31,17 @@ export async function getCurrentUser(): Promise<SiteUser> {
 }
 
 export async function changePassword(
-  oldPassword: string,
-  newPassword: string,
-): Promise<void> {
-  await apiPatch('/api/auth/change-password', {
-    oldPassword,
-    newPassword,
-  });
+   oldPassword: string,
+   newPassword: string,
+ ): Promise<void> {
+   await apiPatch('/api/auth/change-password', {
+     oldPassword,
+     newPassword,
+   });
+ }
+
+export async function updateDisplayName(displayName: string): Promise<SiteUser> {
+  const body: UpdateDisplayNameRequest = { displayName };
+  const res = await apiPatch<{ data: SiteUser }>('/api/auth/display-name', body);
+  return res.data;
 }

@@ -5,6 +5,7 @@ import { eq, desc, count, and } from 'drizzle-orm';
 
 import { diaryEntries } from '@server/database/tables';
 import type { DiaryEntry, PagedResponse } from '@shared/api.interface';
+import { AuthService } from '@server/modules/auth/auth.service';
 
 interface CreateDiaryDto {
   title: string;
@@ -52,6 +53,7 @@ export class DiaryService {
 
   constructor(
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    private readonly authService: AuthService,
   ) {}
 
   private toDto(row: DiaryRow): DiaryEntry {
@@ -162,6 +164,11 @@ export class DiaryService {
     const isAdmin: boolean = dto.userRole === 'admin';
     const status: 'published' | 'pending' = isAdmin ? 'published' : 'pending';
 
+    let resolvedSubmitterName: string | null = null;
+    if (dto.submitterId) {
+      resolvedSubmitterName = await this.authService.getUserDisplayName(dto.submitterId);
+    }
+
     const rows: DiaryRow[] = await this.db
       .insert(diaryEntries)
       .values({
@@ -179,7 +186,7 @@ export class DiaryService {
         characterBackground: dto.characterBackground ?? null,
         recommendationReason: dto.recommendationReason ?? null,
         submitterId: dto.submitterId ?? null,
-        submitterName: dto.submitterName ?? null,
+        submitterName: resolvedSubmitterName,
       })
       .returning();
 

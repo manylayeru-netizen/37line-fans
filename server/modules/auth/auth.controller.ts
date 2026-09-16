@@ -13,13 +13,14 @@ import type { Request } from 'express';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@server/common/guards/auth.guard';
 import type {
-  ApiResponse,
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  SiteUser,
-  UpdateAvatarRequest,
-} from '@shared/api.interface';
+   ApiResponse,
+   LoginRequest,
+   LoginResponse,
+   RegisterRequest,
+   SiteUser,
+   UpdateAvatarRequest,
+   UpdateDisplayNameRequest,
+ } from '@shared/api.interface';
 
 @Controller('api/auth')
 export class AuthController {
@@ -65,16 +66,33 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard)
-  @Patch('avatar')
-  async updateAvatar(
+   @Patch('avatar')
+   async updateAvatar(
+     @Req() req: Request,
+     @Body() body: UpdateAvatarRequest,
+   ): Promise<ApiResponse<SiteUser>> {
+     const userPayload = (req as { user?: { userId?: string } }).user;
+     if (!userPayload?.userId) {
+       throw new BadRequestException('用户信息无效');
+     }
+     const user = await this.authService.updateAvatar(userPayload.userId, body.avatarUrl);
+     return { code: 0, message: 'ok', data: user };
+   }
+
+  @UseGuards(AuthGuard)
+  @Patch('display-name')
+  async updateDisplayName(
     @Req() req: Request,
-    @Body() body: UpdateAvatarRequest,
+    @Body() body: UpdateDisplayNameRequest,
   ): Promise<ApiResponse<SiteUser>> {
     const userPayload = (req as { user?: { userId?: string } }).user;
     if (!userPayload?.userId) {
       throw new BadRequestException('用户信息无效');
     }
-    const user = await this.authService.updateAvatar(userPayload.userId, body.avatarUrl);
+    const user = await this.authService.updateDisplayName(
+      userPayload.userId,
+      body.displayName,
+    );
     return { code: 0, message: 'ok', data: user };
   }
 }

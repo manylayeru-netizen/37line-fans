@@ -83,7 +83,7 @@ const LiteratureDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => navigate('/literature')}
@@ -97,12 +97,12 @@ const LiteratureDetailPage: React.FC = () => {
 
         {!loading && !error && post && (
           <>
-            <article className="relative bg-paper rounded-xl shadow-lg p-8 md:p-12 mb-10">
+             <article className="relative bg-paper rounded-xl shadow-lg p-5 sm:p-8 md:p-12 mb-6 md:mb-10">
               <div className="absolute -top-3 left-10 w-24 h-6 bg-tape-pink opacity-70 -rotate-6 shadow-sm" />
               <div className="absolute -top-2 right-12 w-20 h-5 bg-tape-blue opacity-70 rotate-6 shadow-sm" />
 
-              <header className="text-center mb-8 pb-8 border-b-2 border-dashed border-grid">
-                <h1 className="font-handwriting text-4xl md:text-5xl text-ink mb-4">{post.title}</h1>
+               <header className="text-center mb-6 pb-6 border-b-2 border-dashed border-grid">
+                 <h1 className="font-handwriting text-2xl sm:text-3xl md:text-5xl text-ink mb-4">{post.title}</h1>
                 <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-cocoa/70">
                   <span>✍️ {post.author}</span>
                   {post.sourcePlatform && <span>📍 {post.sourcePlatform}</span>}
@@ -121,20 +121,20 @@ const LiteratureDetailPage: React.FC = () => {
                 </div>
               </header>
 
-              {post.recommendationReason && (
-                <div className="relative bg-mint/30 rounded-xl p-6 mb-8 -rotate-0.5">
+               {post.recommendationReason && (
+                 <div className="relative bg-mint/30 rounded-xl p-4 sm:p-6 mb-6 md:mb-8 -rotate-0.5">
                   <div className="absolute -top-2 left-6 w-16 h-4 bg-tape-pink/60 -rotate-6" />
                   <p className="font-handwriting text-lg text-ink mb-2">💡 推荐理由</p>
                   <p className="text-cocoa/80 leading-relaxed">{post.recommendationReason}</p>
                 </div>
               )}
 
-              <div className="text-cocoa/90 leading-loose text-base md:text-lg whitespace-pre-wrap">
+               <div className="text-cocoa leading-relaxed md:leading-loose text-sm sm:text-base md:text-lg whitespace-pre-wrap">
                 {post.content}
               </div>
             </article>
 
-            <section className="bg-paper rounded-xl shadow-md p-6 md:p-8">
+             <section className="bg-paper rounded-xl shadow-md p-4 sm:p-6 md:p-8">
               <h2 className="font-handwriting text-2xl text-ink mb-6">
                 💬 评论区 <span className="text-base text-cocoa/50">({comments?.total || 0})</span>
               </h2>

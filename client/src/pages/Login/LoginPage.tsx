@@ -66,25 +66,25 @@ const LoginPage: React.FC = () => {
           <div className="absolute -top-3 right-8 w-20 h-6 bg-tape-blue opacity-70 transform rotate-6 rounded-sm shadow-sm z-10" />
 
           {/* Spiral binding */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-grid/40 flex flex-col items-center justify-around py-8">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-4 h-4 rounded-full bg-paper border-2 border-cocoa/20 shadow-inner"
-              />
-            ))}
-          </div>
+          <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-8 bg-grid/40 flex flex-col items-center justify-around py-6 sm:py-8">
+             {Array.from({ length: 8 }).map((_, i) => (
+               <div
+                 key={i}
+                 className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-paper border-2 border-cocoa/20 shadow-inner"
+               />
+             ))}
+           </div>
 
-          <div className="pl-12 pr-8 pt-12 pb-8">
+           <div className="pl-9 sm:pl-12 pr-5 sm:pr-8 pt-8 sm:pt-12 pb-6 sm:pb-8">
             {/* Title */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-3">
                 <PawPrint className="text-shiba w-8 h-8" strokeWidth={1.5} />
               </div>
-              <h1
-                className="text-4xl text-ink mb-2"
-                style={{ fontFamily: 'var(--font-handwriting)' }}
-              >
+               <h1
+                 className="text-3xl sm:text-4xl text-ink mb-2"
+                 style={{ fontFamily: 'var(--font-handwriting)' }}
+               >
                 37line
               </h1>
               <p className="text-sm text-cocoa/70 font-handwriting">
@@ -98,10 +98,10 @@ const LoginPage: React.FC = () => {
                 <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                   用户名
                 </label>
-                <input
-                  type="text"
-                  placeholder="请输入用户名"
-                  className="w-full px-4 py-2.5 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                 <input
+                   type="text"
+                   placeholder="请输入用户名"
+                   className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                   {...register('username', {
                     required: '请输入用户名',
                   })}
@@ -119,10 +119,10 @@ const LoginPage: React.FC = () => {
                   密码
                 </label>
                 <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="请输入密码"
-                    className="w-full px-4 py-2.5 pr-11 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                     <input
+                       type={showPassword ? 'text' : 'password'}
+                       placeholder="请输入密码"
+                       className="w-full px-3 sm:px-4 py-2 pr-10 sm:pr-11 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                     {...register('password', {
                       required: '请输入密码',
                       minLength: {

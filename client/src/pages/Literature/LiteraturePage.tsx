@@ -70,7 +70,7 @@ const LiteraturePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
         <PageHeader title="文学鉴赏" subtitle="一起品读好文字 📚" icon="📖" />
 
@@ -160,11 +160,11 @@ const LiteraturePage: React.FC = () => {
                     <article
                       key={post.id}
                       onClick={() => navigate(`/literature/${post.id}`)}
-                      className={`relative bg-paper rounded-xl shadow-md p-6 cursor-pointer card-wobble transition-transform hover:shadow-lg ${idx % 2 === 0 ? '-rotate-0.5' : 'rotate-0.5'}`}
+                       className={`relative bg-paper rounded-xl shadow-md p-4 sm:p-6 cursor-pointer card-wobble transition-transform hover:shadow-lg ${idx % 2 === 0 ? '-rotate-0.5' : 'rotate-0.5'}`}
                     >
                       <div className={`absolute -top-3 left-8 w-20 h-6 ${tapeColor} opacity-70 -rotate-6 shadow-sm`} />
 
-                      <h2 className="font-handwriting text-2xl md:text-3xl text-ink mb-2">
+                       <h2 className="font-handwriting text-xl sm:text-2xl md:text-3xl text-ink mb-2">
                         {post.title}
                       </h2>
 

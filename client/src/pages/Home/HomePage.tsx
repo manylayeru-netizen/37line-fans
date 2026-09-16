@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -11,6 +11,12 @@ import {
    Crown,
 } from 'lucide-react';
 import { Cloud, Sun, Star, WashiTape, PolaroidFrame } from '@client/src/components/ui/handdrawn';
+import { getDiaryLatest } from '@client/src/api/diary';
+import { getCollectionFeatured } from '@client/src/api/collection';
+import { getGuestbookNotes } from '@client/src/api/guestbook';
+import type { DiaryEntry } from '@shared/api.interface';
+import type { CollectionCard } from '@shared/api.interface';
+import type { GuestbookNote } from '@shared/api.interface';
 
 interface EntryCardData {
   title: string;
@@ -56,18 +62,46 @@ const entryCards: EntryCardData[] = [
   },
 ];
 
- const latestDiaries: { date: string; weather: string; title: string; preview: string }[] = [];
-
- const upcomingDates: { date: string; title: string; isCrown: boolean }[] = [];
-
- const collectionHighlights: { title: string; rotation: number; seed: string }[] = [];
-
- const guestbookNotes: { author: string; content: string; color: string }[] = [];
+const upcomingDates: { date: string; title: string; isCrown: boolean }[] = [];
 
 const HomePage: React.FC = () => {
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [latestDiaries, setLatestDiaries] = useState<DiaryEntry[]>([]);
+  const [collectionHighlights, setCollectionHighlights] = useState<CollectionCard[]>([]);
+  const [guestbookNotes, setGuestbookNotes] = useState<GuestbookNote[]>([]);
 
-   return (
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHomeData(): Promise<void> {
+      try {
+        const [diaries, featured, notes] = await Promise.all([
+          getDiaryLatest().catch(() => [] as DiaryEntry[]),
+          getCollectionFeatured().catch(() => [] as CollectionCard[]),
+          getGuestbookNotes({ page: 1, pageSize: 6 })
+            .then((res) => res.items)
+            .catch(() => [] as GuestbookNote[]),
+        ]);
+        if (cancelled) return;
+        setLatestDiaries(Array.isArray(diaries) ? diaries.slice(0, 3) : []);
+        setCollectionHighlights(Array.isArray(featured) ? featured.slice(0, 4) : []);
+        setGuestbookNotes(Array.isArray(notes) ? notes : []);
+      } catch {
+        if (cancelled) return;
+        setLatestDiaries([]);
+        setCollectionHighlights([]);
+        setGuestbookNotes([]);
+      }
+    }
+
+    void loadHomeData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
     <div className="relative">
       {/* ========== Hero 区域 ========== */}
       <section className="relative min-h-[60vh] flex flex-col items-center justify-center overflow-hidden bg-cream bg-grid-pattern/40 rounded-3xl -mx-4 md:-mx-6 px-4 md:px-6 py-12 md:py-16">
@@ -133,7 +167,7 @@ const HomePage: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-center z-10 relative mt-16 md:mt-20"
         >
-          <h1 className="font-handwriting text-4xl text-ink leading-none mb-4 relative inline-block">
+          <h1 className="font-handwriting text-3xl sm:text-4xl text-ink leading-none mb-4 relative inline-block">
              37lineの小世界
              <span className="absolute top-2 -left-12 hidden md:block">
                <Star size={22} color="#F4A261" />
@@ -142,7 +176,7 @@ const HomePage: React.FC = () => {
                <Heart size={18} className="text-tape-pink" fill="currentColor" />
              </span>
            </h1>
-          <p className="font-mono tracking-widest text-sm md:text-base text-cocoa/70 mb-8 uppercase">
+           <p className="font-mono tracking-widest text-xs sm:text-sm md:text-base text-cocoa/70 mb-8 uppercase">
              ALL ABOUT MINA &amp; SANA
            </p>
 
@@ -163,7 +197,7 @@ const HomePage: React.FC = () => {
               transition={{ duration: 0.4, delay: idx * 0.1 }}
               whileHover={{ rotate: card.tapeRotation > 0 ? -1 : 1, transition: { duration: 0.2 } }}
               onClick={() => navigate(card.path)}
-              className="card-wobble relative bg-paper rounded-2xl p-8 shadow cursor-pointer hover:shadow-md transition-shadow group"
+               className="card-wobble relative bg-paper rounded-2xl p-5 sm:p-6 md:p-8 shadow cursor-pointer hover:shadow-md transition-shadow group"
             >
               {/* 顶部胶带 */}
               <WashiTape
@@ -174,12 +208,12 @@ const HomePage: React.FC = () => {
                 className="left-1/2 -translate-x-1/2 -top-3"
               />
 
-              <div className="flex items-start gap-4 pt-2">
-                <div className="flex-shrink-0 w-16 h-16 rounded-2xl bg-cream flex items-center justify-center text-cocoa group-hover:text-shiba transition-colors">
-                  {card.icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-handwriting text-2xl text-ink mb-1">{card.title}</h3>
+               <div className="flex items-start gap-3 sm:gap-4 pt-2">
+                 <div className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-cream flex items-center justify-center text-cocoa group-hover:text-shiba transition-colors">
+                   {card.icon}
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <h3 className="font-handwriting text-xl sm:text-2xl text-ink mb-1">{card.title}</h3>
                   <p className="text-cocoa/70 text-sm">{card.description}</p>
                 </div>
               </div>
@@ -190,9 +224,9 @@ const HomePage: React.FC = () => {
 
       {/* ========== 最新日记预览区 ========== */}
       <section className="mt-12 md:mt-16">
-        <div className="flex items-center gap-3 mb-6">
-          <SunIcon size={24} className="text-shiba" />
-           <h2 className="font-handwriting text-3xl text-ink">最新消息</h2>
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+           <SunIcon size={20} className="text-shiba sm:size-6" />
+            <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">最新消息</h2>
           <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
           <button
             onClick={() => navigate('/dailyfics')}
@@ -208,21 +242,24 @@ const HomePage: React.FC = () => {
               <p className="font-handwriting text-xl text-cocoa/50">暂无消息，敬请期待～</p>
             </div>
           ) : (
-            latestDiaries.map((diary, idx: number) => (
+            latestDiaries.map((diary: DiaryEntry, idx: number) => (
               <motion.div
-                key={idx}
+                key={diary.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className="bg-paper rounded-xl p-5 shadow-sm hover:shadow transition-shadow cursor-pointer card-wobble relative"
+                onClick={() => navigate(`/dailyfics/${diary.id}`)}
+                className="bg-paper rounded-xl p-4 sm:p-5 shadow-sm hover:shadow transition-shadow cursor-pointer card-wobble relative"
               >
                 <div className="flex items-center gap-2 mb-2 text-sm text-cocoa/60">
-                  <span className="font-mono">{diary.date}</span>
+                  <span className="font-mono">{diary.entryDate}</span>
                   <span>{diary.weather}</span>
                 </div>
                 <h3 className="font-handwriting text-xl text-ink mb-2">{diary.title}</h3>
-                <p className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">{diary.preview}</p>
+                <p className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">
+                  {diary.content.length > 100 ? `${diary.content.slice(0, 100)}…` : diary.content}
+                </p>
                 <WashiTape
                   color={idx % 2 === 0 ? 'pink' : 'blue'}
                   pattern="stripes"
@@ -239,9 +276,9 @@ const HomePage: React.FC = () => {
 
       {/* ========== 即将到来的纪念日 ========== */}
       <section className="mt-12 md:mt-16">
-        <div className="flex items-center gap-3 mb-6">
-          <Calendar size={24} className="text-penguin" />
-         <h2 className="font-handwriting text-3xl text-ink">那年今日</h2>
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+           <Calendar size={20} className="text-penguin sm:size-6" />
+          <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">那年今日</h2>
            <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
         </div>
 
@@ -277,9 +314,9 @@ const HomePage: React.FC = () => {
 
       {/* ========== 收集册精选 ========== */}
       <section className="mt-12 md:mt-16">
-        <div className="flex items-center gap-3 mb-6">
-          <ImageIcon size={24} className="text-mint" />
-           <h2 className="font-handwriting text-3xl text-ink">最新合照</h2>
+        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+           <ImageIcon size={20} className="text-mint sm:size-6" />
+            <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">最新合照</h2>
           <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
           <button
             onClick={() => navigate('/collection')}
@@ -289,30 +326,30 @@ const HomePage: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-6 md:gap-8 py-4">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 py-2 sm:py-4">
           {collectionHighlights.length === 0 ? (
             <div className="w-full text-center py-12 bg-paper/30 rounded-xl border-2 border-dashed border-grid/70">
               <p className="font-handwriting text-xl text-cocoa/50">还没有照片哦，上传后会在这里展示～</p>
             </div>
           ) : (
-            collectionHighlights.map((item, idx: number) => (
+            collectionHighlights.map((item: CollectionCard, idx: number) => (
               <motion.div
-                key={idx}
+                key={item.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="flex-shrink-0"
               >
-                <PolaroidFrame title={item.title} rotation={item.rotation}>
-                  <div
-                    className="w-40 h-48 bg-gradient-to-br from-cream to-mint/30 flex items-center justify-center"
-                    style={{
-                      backgroundImage: `url(https://picsum.photos/seed/${item.seed}/160/192)`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                    }}
-                  />
+                <PolaroidFrame title={item.title} rotation={item.rotationDegree}>
+                   <div
+                     className="w-28 h-32 sm:w-36 sm:h-44 md:w-40 md:h-48 bg-gradient-to-br from-cream to-mint/30 flex items-center justify-center"
+                     style={{
+                       backgroundImage: `url(${item.imageUrl})`,
+                       backgroundSize: 'cover',
+                       backgroundPosition: 'center',
+                     }}
+                   />
                 </PolaroidFrame>
               </motion.div>
             ))
@@ -323,32 +360,33 @@ const HomePage: React.FC = () => {
       {/* ========== 留言板入口 ========== */}
       <section className="mt-12 md:mt-16">
         <div className="bg-corkboard rounded-2xl p-6 md:p-8 relative shadow-inner">
-          <div className="flex items-center gap-3 mb-6">
-            <StickyNote size={24} className="text-cream" />
-            <h2 className="font-handwriting text-3xl text-paper">留言板</h2>
+           <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+             <StickyNote size={20} className="text-cream sm:size-6" />
+             <h2 className="font-handwriting text-2xl sm:text-3xl text-paper">留言板</h2>
           </div>
 
-          <div className="flex flex-wrap gap-4 md:gap-6 mb-6">
+           <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 mb-6">
             {guestbookNotes.length === 0 ? (
               <div className="w-full text-center py-10 bg-paper/20 rounded-xl border-2 border-dashed border-paper/40">
                 <p className="font-handwriting text-xl text-paper/70">还没有留言呢，来写第一张吧～</p>
               </div>
             ) : (
-              guestbookNotes.map((note, idx: number) => (
+              guestbookNotes.map((note: GuestbookNote, idx: number) => (
                 <motion.div
-                  key={idx}
+                  key={note.id}
                   initial={{ opacity: 0, rotate: idx % 2 === 0 ? -5 : 5 }}
                   whileInView={{ opacity: 1, rotate: idx % 2 === 0 ? -3 : 3 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: idx * 0.15 }}
-                  className={`${note.color} w-40 min-h-[100px] p-4 rounded-sm shadow-lg relative card-wobble`}
+                   className="w-[calc(50%-0.5rem)] sm:w-36 min-h-[90px] p-3 sm:p-4 rounded-sm shadow-lg relative card-wobble"
                   style={{
+                    backgroundColor: note.noteColor,
                     boxShadow: '0 3px 10px rgba(0, 0, 0, 0.2)',
                   }}
                 >
                   <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-penguin shadow-md border border-cocoa/30" />
-                  <p className="font-handwriting text-ink text-base leading-snug">{note.content}</p>
-                  <p className="text-cocoa/60 text-xs mt-2 text-right">— {note.author}</p>
+                   <p className="font-handwriting text-ink text-sm sm:text-base leading-snug line-clamp-3">{note.content}</p>
+                  <p className="text-cocoa/60 text-xs mt-2 text-right">— {note.authorName}</p>
                 </motion.div>
               ))
             )}

@@ -115,10 +115,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Welcome */}
       <div className="relative mb-10">
         <div className="inline-block relative">
-          <h2
-            className="text-4xl text-ink"
-            style={{ fontFamily: 'var(--font-handwriting)' }}
-          >
+             <h2
+               className="text-2xl sm:text-3xl md:text-4xl text-ink"
+               style={{ fontFamily: 'var(--font-handwriting)' }}
+             >
             欢迎回来，站长～ ✨
           </h2>
           <div className="mt-1 h-1 w-full bg-gradient-to-r from-shiba via-tape-pink to-tape-blue rounded-full opacity-60" />

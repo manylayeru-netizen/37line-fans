@@ -182,14 +182,14 @@ const CollectionPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-6xl mx-auto">
         <PageHeader title="照片集" subtitle="收藏每一份小美好 💌" icon="📮" />
 
         {/* 上传区域 */}
         <div className="mb-10">
           {isAuthenticated ? (
-            <div className="relative bg-paper rounded-xl p-6 shadow-md border-2 border-cocoa/5">
+             <div className="relative bg-paper rounded-xl p-4 sm:p-6 shadow-md border-2 border-cocoa/5">
               {/* 胶带装饰 */}
               <div className="tape-strip" />
               <div className="tape-strip tape-strip-blue" />
@@ -318,7 +318,7 @@ const CollectionPage: React.FC = () => {
         </div>
 
         {/* 分类标签 */}
-        <div className="flex flex-wrap justify-center gap-3 mb-10">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-8">
           {categories.map((cat, idx) => (
             <button
               key={cat}
@@ -326,7 +326,7 @@ const CollectionPage: React.FC = () => {
                 setActiveCategory(cat);
                 setPage(1);
               }}
-              className={`px-5 py-2 rounded-full font-handwriting text-lg transition-all card-wobble ${
+               className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-handwriting text-base sm:text-lg transition-all card-wobble ${
                 activeCategory === cat
                   ? `${stickerColors[idx % stickerColors.length]} shadow-md scale-105 border-2 border-cocoa/10`
                   : 'bg-paper text-cocoa/70 border-2 border-cocoa/10 hover:border-shiba'
@@ -350,7 +350,7 @@ const CollectionPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                 {data.items.map((card, idx) => {
                   const rotation =
                     card.rotationDegree || ((idx % 5) - 2) * 1.5;
@@ -372,8 +372,8 @@ const CollectionPage: React.FC = () => {
                           loading="lazy"
                         />
                       </div>
-                      <div className="mt-2 text-center">
-                        <p className="font-handwriting text-xl text-ink truncate">
+                     <div className="mt-1 sm:mt-2 text-center">
+                       <p className="font-handwriting text-base sm:text-xl text-ink truncate">
                           {card.title}
                         </p>
                         <p className="text-xs text-cocoa/50">{card.category}</p>

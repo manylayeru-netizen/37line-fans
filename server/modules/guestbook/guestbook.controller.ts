@@ -7,9 +7,10 @@ import {
   Param,
   Query,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { GuestbookService } from './guestbook.service';
-import { AdminGuard } from '@server/common/guards/auth.guard';
+import { AuthGuard, AdminGuard } from '@server/common/guards/auth.guard';
 import type {
   ApiResponse,
   GuestbookNote,
@@ -43,6 +44,24 @@ export class GuestbookController {
   ): Promise<ApiResponse<GuestbookNote>> {
     const result = await this.guestbookService.createNote(body);
     return { code: 0, message: 'ok', data: result };
+  }
+
+  /** 用户删除自己的留言 / 管理员删除任意留言 */
+  @Delete('notes/:id')
+  @UseGuards(AuthGuard)
+  async deleteMyNote(
+    @Req() req: any,
+    @Param('id') id: string,
+  ): Promise<ApiResponse<null>> {
+    const { userId, username, role, displayName } = req.user;
+    await this.guestbookService.deleteNoteByUser(
+      id,
+      userId,
+      role,
+      displayName,
+      username,
+    );
+    return { code: 0, message: 'ok', data: null };
   }
 
   /** 管理员列表 */

@@ -338,7 +338,7 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-6xl mx-auto">
         <PageHeader title="双人日历" subtitle="标记每一个重要的日子 📅" icon="📅" />
 

@@ -47,7 +47,7 @@ const DiaryPage: React.FC = () => {
   }, [page]);
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
         <PageHeader title="每日推文" subtitle="邂逅一篇好文 📖" icon="📓" />
 
@@ -92,17 +92,17 @@ const DiaryPage: React.FC = () => {
                     <article
                       key={entry.id}
                       onClick={() => navigate(`/dailyfics/${entry.id}`)}
-                      className={`relative bg-paper rounded-xl shadow-md p-6 md:p-8 cursor-pointer card-wobble transition-transform ${rotateClass} hover:shadow-lg`}
+                       className={`relative bg-paper rounded-xl shadow-md p-4 sm:p-6 md:p-8 cursor-pointer card-wobble transition-transform ${rotateClass} hover:shadow-lg`}
                     >
                       <div className={`absolute -top-3 left-8 w-20 h-6 ${tapeColor} opacity-70 -rotate-6 shadow-sm`} />
-                      <div className="flex items-start gap-6">
-                        <div className="flex-shrink-0 text-center min-w-[72px]">
-                          <div className="font-handwriting text-5xl text-shiba leading-none">{date.day}</div>
-                          <div className="text-sm text-cocoa/70 mt-1">{date.month}</div>
-                           <div className="text-xs text-cocoa/50">{date.year}</div>
-                         </div>
-                         <div className="flex-1 border-l-2 border-dashed border-grid pl-6">
-                           <h2 className="font-handwriting text-2xl md:text-3xl text-ink mb-2">
+                       <div className="flex items-start gap-3 sm:gap-6">
+                         <div className="flex-shrink-0 text-center min-w-[56px] sm:min-w-[72px]">
+                           <div className="font-handwriting text-3xl sm:text-5xl text-shiba leading-none">{date.day}</div>
+                           <div className="text-xs sm:text-sm text-cocoa/70 mt-1">{date.month}</div>
+                            <div className="text-xs text-cocoa/50">{date.year}</div>
+                          </div>
+                          <div className="flex-1 min-w-0 border-l-2 border-dashed border-grid pl-3 sm:pl-6">
+                           <h2 className="font-handwriting text-xl sm:text-2xl md:text-3xl text-ink mb-2">
                              {entry.title}
                            </h2>
                            <div className="flex flex-wrap items-center gap-3 text-sm text-cocoa/60 mb-3">

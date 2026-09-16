@@ -155,25 +155,25 @@ const RegisterPage: React.FC = () => {
           <div className="absolute -top-3 right-1/4 w-20 h-6 bg-tape-pink opacity-70 transform rotate-6 rounded-sm shadow-sm z-10" />
 
           {/* Spiral binding */}
-          <div className="absolute left-0 top-0 bottom-0 w-8 bg-grid/40 flex flex-col items-center justify-around py-8">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-4 h-4 rounded-full bg-paper border-2 border-cocoa/20 shadow-inner"
-              />
-            ))}
-          </div>
+          <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-8 bg-grid/40 flex flex-col items-center justify-around py-6 sm:py-8">
+             {Array.from({ length: 10 }).map((_, i) => (
+               <div
+                 key={i}
+                 className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-paper border-2 border-cocoa/20 shadow-inner"
+               />
+             ))}
+           </div>
 
-          <div className="pl-12 pr-8 pt-12 pb-8">
+           <div className="pl-9 sm:pl-12 pr-5 sm:pr-8 pt-8 sm:pt-10 pb-6 sm:pb-8">
             {/* Title */}
             <div className="text-center mb-6">
               <div className="flex justify-center mb-3">
                 <Heart className="text-shiba w-7 h-7" fill="currentColor" />
               </div>
-              <h1
-                className="text-3xl text-ink mb-1"
-                style={{ fontFamily: 'var(--font-handwriting)' }}
-              >
+               <h1
+                 className="text-2xl sm:text-3xl text-ink mb-1"
+                 style={{ fontFamily: 'var(--font-handwriting)' }}
+               >
                 申请加入 37line
               </h1>
               <p className="text-sm text-cocoa/70 font-handwriting">
@@ -187,10 +187,10 @@ const RegisterPage: React.FC = () => {
                 <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                   用户名 <span className="text-destructive">*</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="字母、数字、下划线"
-                  className="w-full px-4 py-2.5 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                 <input
+                   type="text"
+                   placeholder="字母、数字、下划线"
+                   className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                   {...register('username')}
                 />
                 {errors.username && (
@@ -207,10 +207,10 @@ const RegisterPage: React.FC = () => {
                     密码 <span className="text-destructive">*</span>
                   </label>
                   <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="至少 6 位"
-                      className="w-full px-4 py-2.5 pr-11 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                     <input
+                       type={showPassword ? 'text' : 'password'}
+                       placeholder="至少 6 位"
+                       className="w-full px-3 sm:px-4 py-2 pr-10 sm:pr-11 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                       {...register('password')}
                     />
                     <button
@@ -233,10 +233,10 @@ const RegisterPage: React.FC = () => {
                   <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                     确认密码 <span className="text-destructive">*</span>
                   </label>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="再输入一次"
-                    className="w-full px-4 py-2.5 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                   <input
+                     type={showPassword ? 'text' : 'password'}
+                     placeholder="再输入一次"
+                     className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                     {...register('confirmPassword')}
                   />
                   {errors.confirmPassword && (
@@ -253,10 +253,10 @@ const RegisterPage: React.FC = () => {
                   <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                     昵称 <span className="text-destructive">*</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="你的可爱昵称"
-                    className="w-full px-4 py-2.5 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                   <input
+                     type="text"
+                     placeholder="你的可爱昵称"
+                     className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                     {...register('displayName')}
                   />
                   {errors.displayName && (
@@ -270,10 +270,10 @@ const RegisterPage: React.FC = () => {
                   <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                     邮箱 <span className="text-cocoa/40">（选填）</span>
                   </label>
-                  <input
-                    type="email"
-                    placeholder="your@email.com"
-                    className="w-full px-4 py-2.5 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
+                   <input
+                     type="email"
+                     placeholder="your@email.com"
+                     className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all"
                     {...register('email')}
                   />
                   {errors.email && (
@@ -289,10 +289,10 @@ const RegisterPage: React.FC = () => {
                 <label className="block text-sm font-medium text-cocoa mb-1.5 font-handwriting">
                   申请理由 <span className="text-destructive">*</span>
                 </label>
-                <textarea
-                  rows={4}
-                  placeholder="说说你为什么想要加入 37line 的小世界吧~"
-                  className="w-full px-4 py-3 bg-cream/50 border-2 border-grid rounded-xl text-cocoa placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all resize-none"
+                 <textarea
+                   rows={4}
+                   placeholder="说说你为什么想要加入 37line 的小世界吧~"
+                   className="w-full px-3 sm:px-4 py-2 bg-cream/50 border-2 border-grid rounded-xl text-cocoa text-sm sm:text-base placeholder:text-cocoa/40 focus:outline-none focus:border-shiba/60 focus:bg-paper transition-all resize-none"
                   {...register('applicationReason')}
                 />
                 {errors.applicationReason && (

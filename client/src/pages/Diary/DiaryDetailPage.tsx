@@ -39,7 +39,7 @@ const DiaryDetailPage: React.FC = () => {
   }, [id]);
 
   return (
-    <div className="min-h-screen bg-cream py-12 px-4 md:px-6">
+     <div className="min-h-screen bg-cream py-8 md:py-12 px-4 md:px-6">
       <div className="max-w-3xl mx-auto">
         <button
           onClick={() => navigate('/dailyfics')}
@@ -52,13 +52,13 @@ const DiaryDetailPage: React.FC = () => {
         {error && <ErrorState message={error} />}
 
         {!loading && !error && entry && (
-          <article className="relative bg-paper rounded-xl shadow-lg p-8 md:p-12">
+           <article className="relative bg-paper rounded-xl shadow-lg p-5 sm:p-8 md:p-12">
             <div className="absolute -top-3 left-10 w-24 h-6 bg-tape-pink opacity-70 -rotate-6 shadow-sm" />
             <div className="absolute -top-2 right-12 w-20 h-5 bg-tape-blue opacity-70 rotate-6 shadow-sm" />
 
              <header className="text-center mb-8 pb-8 border-b-2 border-dashed border-grid">
-               <p className="font-handwriting text-xl text-cocoa/70 mb-2">{formatFullDate(entry.entryDate)}</p>
-               <h1 className="font-handwriting text-4xl md:text-5xl text-ink mb-4">{entry.title}</h1>
+               <p className="font-handwriting text-base sm:text-xl text-cocoa/70 mb-2">{formatFullDate(entry.entryDate)}</p>
+                <h1 className="font-handwriting text-2xl sm:text-3xl md:text-5xl text-ink mb-4">{entry.title}</h1>
                <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-cocoa/60">
                  {entry.author && <span>✍️ {entry.author}</span>}
                  {entry.sourcePlatform && <span>📍 {entry.sourcePlatform}</span>}
@@ -104,7 +104,7 @@ const DiaryDetailPage: React.FC = () => {
                </div>
              )}
 
-              <div className="font-handwriting text-lg md:text-xl leading-loose text-cocoa/90 whitespace-pre-wrap">
+               <div className="font-handwriting text-base md:text-lg leading-relaxed md:leading-loose text-cocoa whitespace-pre-wrap">
                 {entry.content}
               </div>
 

@@ -88,6 +88,7 @@ export class AuthService implements OnModuleInit {
       userId: user.id,
       username: user.username,
       role: user.role,
+      displayName: user.displayName ?? null,
     });
 
     return {
@@ -224,6 +225,44 @@ export class AuthService implements OnModuleInit {
     }
 
     return mapSiteUser(updated[0]);
+  }
+
+  async updateDisplayName(userId: string, displayName: string): Promise<SiteUser> {
+    const trimmed: string = displayName.trim();
+    if (trimmed.length < 1 || trimmed.length > 20) {
+      throw new BadRequestException('昵称长度需在 1-20 个字符之间');
+    }
+
+    const filterResult = this.contentFilter.filter(trimmed);
+    if (!filterResult.clean) {
+      throw new BadRequestException('昵称包含敏感内容，请修改后重新提交');
+    }
+
+    const updated = await this.db
+      .update(siteUsers)
+      .set({ displayName: trimmed })
+      .where(eq(siteUsers.id, userId))
+      .returning();
+
+    if (updated.length === 0) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    return mapSiteUser(updated[0]);
+  }
+
+  async getUserDisplayName(userId: string): Promise<string> {
+    const users: SiteUserRow[] = await this.db
+      .select()
+      .from(siteUsers)
+      .where(eq(siteUsers.id, userId))
+      .limit(1);
+
+    if (users.length === 0) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    return users[0].displayName ?? users[0].username;
   }
 
   async initDefaultAdmin(): Promise<void> {

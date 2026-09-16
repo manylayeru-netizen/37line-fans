@@ -279,8 +279,9 @@ const DiaryManagePage: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-paper rounded-2xl shadow-md border-2 border-dashed border-grid overflow-hidden">
-        <table className="w-full">
+       <div className="bg-paper rounded-2xl shadow-md border-2 border-dashed border-grid overflow-hidden">
+         <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="border-b-2 border-dashed border-grid bg-cream/30">
               <th className="text-left py-3 px-4 text-sm text-cocoa/70 font-medium">标题</th>
@@ -390,8 +391,9 @@ const DiaryManagePage: React.FC = () => {
               ))
             )}
           </tbody>
-        </table>
-      </div>
+         </table>
+         </div>
+       </div>
 
       <div className="mt-6">
         <StickerPagination

@@ -5,6 +5,7 @@ import { eq, desc, count, asc, and } from 'drizzle-orm';
 
 import { collectionCards, siteUsers } from '@server/database/tables';
 import type { CollectionCard, PagedResponse } from '@shared/api.interface';
+import { AuthService } from '@server/modules/auth/auth.service';
 
 interface CreateCollectionDto {
   title: string;
@@ -45,6 +46,7 @@ export class CollectionService {
 
   constructor(
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    private readonly authService: AuthService,
   ) {}
 
   private toDto(row: CollectionRow): CollectionCard {
@@ -174,10 +176,11 @@ export class CollectionService {
 
     const user: { username: string; displayName: string | null; avatarUrl: string | null } =
       userRows[0];
+    const displayName: string = await this.authService.getUserDisplayName(userId);
     const uploader: UploaderInfo = {
       id: userId,
       username: user.username,
-      displayName: user.displayName ?? undefined,
+      displayName,
       avatarUrl: user.avatarUrl ?? undefined,
     };
 

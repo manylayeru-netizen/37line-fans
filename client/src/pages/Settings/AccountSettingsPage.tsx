@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { User, Upload, Loader2, Lock, Camera } from 'lucide-react';
+import { User, Upload, Loader2, Lock, Camera, Edit2 } from 'lucide-react';
 import { Input } from '@client/src/components/ui/input';
 import { Button } from '@client/src/components/ui/button';
 import { useAuthStore } from '@client/src/store/auth.store';
 import { apiPost, apiPatch } from '@client/src/utils/api-client';
+import { updateDisplayName as updateDisplayNameApi } from '@client/src/api/auth';
 import type {
   ChangePasswordRequest,
   SiteUser,
@@ -27,6 +28,12 @@ const AccountSettingsPage = () => {
 
   // 头像上传状态
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // 修改昵称状态
+  const [displayNameInput, setDisplayNameInput] = useState(
+    user?.displayName || user?.username || '',
+  );
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +73,29 @@ const AccountSettingsPage = () => {
     }
   };
 
+  const handleUpdateDisplayName = async () => {
+    const trimmed: string = displayNameInput.trim();
+    if (trimmed.length < 1 || trimmed.length > 20) {
+      toast.error('昵称长度需在 1-20 个字符之间');
+      return;
+    }
+
+    setSavingDisplayName(true);
+    try {
+      const updated = await updateDisplayNameApi(trimmed);
+      setUser(updated);
+      toast.success('昵称修改成功');
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as { message: unknown }).message)
+          : '昵称修改失败';
+      toast.error(msg);
+    } finally {
+      setSavingDisplayName(false);
+    }
+  };
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
@@ -98,13 +128,13 @@ const AccountSettingsPage = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <h1 className="font-handwriting text-4xl text-ink mb-8 text-center">
+     <div className="max-w-2xl mx-auto py-6 md:py-8 px-0 sm:px-2">
+       <h1 className="font-handwriting text-2xl sm:text-3xl md:text-4xl text-ink mb-6 md:mb-8 text-center">
         账户设置
       </h1>
 
       {/* 更换头像区块 */}
-      <section className="bg-paper rounded-xl shadow-sm border border-grid p-6 mb-6 relative">
+       <section className="bg-paper rounded-xl shadow-sm border border-grid p-4 sm:p-6 mb-4 sm:mb-6 relative">
         <div className="tape-strip" />
         <h2 className="font-handwriting text-2xl text-ink mb-6 flex items-center gap-2">
           <Camera size={20} className="text-shiba" />
@@ -161,6 +191,51 @@ const AccountSettingsPage = () => {
           <p className="text-sm text-cocoa/60">
             支持 JPG、PNG 等图片格式
           </p>
+        </div>
+      </section>
+
+      {/* 修改昵称区块 */}
+       <section className="bg-paper rounded-xl shadow-sm border border-grid p-4 sm:p-6 mb-4 sm:mb-6 relative">
+        <div className="tape-strip" />
+        <h2 className="font-handwriting text-2xl text-ink mb-6 flex items-center gap-2">
+          <Edit2 size={20} className="text-shiba" />
+          修改昵称
+        </h2>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-cocoa mb-1.5">
+              昵称
+            </label>
+            <Input
+              type="text"
+              value={displayNameInput}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setDisplayNameInput(e.target.value)
+              }
+              placeholder="请输入昵称"
+              maxLength={20}
+              className="rounded-lg bg-cream/30 border-grid focus:border-shiba"
+            />
+            <p className="text-xs text-cocoa/50 mt-1">
+              1-20 个字符，将作为您在各处的显示名称
+            </p>
+          </div>
+
+          <Button
+            onClick={handleUpdateDisplayName}
+            disabled={savingDisplayName}
+            className="rounded-full bg-shiba hover:bg-shiba/90 text-white"
+          >
+            {savingDisplayName ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                保存中...
+              </>
+            ) : (
+              '保存'
+            )}
+          </Button>
         </div>
       </section>
 

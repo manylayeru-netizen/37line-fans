@@ -63,18 +63,19 @@
   --accent-border: hsl(from hsl(180 38% 76%) h s calc(l + var(--opaque-button-border-intensity)));
   --muted-border: hsl(from hsl(36 50% 90%) h s calc(l + var(--opaque-button-border-intensity)));
 
-  --font-sans:
-    'Noto Sans SC', 'PingFang SC', 'Microsoft Yahei',
-    'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
-    '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
-    'Tahoma', 'Arial', 'Hiragino Sans GB', 'sans-serif',
-    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-   --font-handwriting:
-     'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft Yahei',
-     Georgia, 'Times New Roman', serif;
-   --font-serif:
-     'Noto Serif SC', 'Source Han Serif SC', ui-serif, Georgia,
-     Cambria, 'Times New Roman', Times, serif;
+    --font-sans:
+     'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC',
+     'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
+     '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
+     'Tahoma', 'Arial', 'Hiragino Sans GB', system-ui, sans-serif,
+     'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-handwriting:
+      'Ma Shan Zheng', 'ZCOOL KuaiLe', 'Noto Serif SC', 'Source Han Serif SC',
+      'PingFang SC', 'Microsoft YaHei', 'Heiti SC',
+      Georgia, 'Times New Roman', serif;
+    --font-serif:
+      'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft YaHei',
+      ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
   --font-mono: Source Code Pro, monospace;
   --radius: 0.75rem;
   --shadow-x: 0px;
@@ -171,6 +172,15 @@ html {
   font-size: 13px;
   scroll-behavior: smooth;
   overscroll-behavior-y: contain;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
@@ -187,6 +197,30 @@ body {
     radial-gradient(circle at 20% 20%, rgba(244, 162, 97, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(125, 155, 181, 0.08) 0%, transparent 50%);
   background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* 全局文本自动换行，防止长文本/URL/英文单词撑破容器 */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+span,
+a,
+button,
+div {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* 图片防止溢出 */
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* 格子纹背景工具类 */

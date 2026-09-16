@@ -4,6 +4,7 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
@@ -79,6 +80,7 @@ export class GuestbookService {
 
     const noteId: string = randomUUID();
     const authorName: string = dto.authorName || '匿名访客';
+    const noteShape: string = dto.noteShape?.trim() || '🐕';
     const noteColor: string = dto.noteColor || '#FFE4B5';
     const now: Date = new Date();
 
@@ -86,7 +88,7 @@ export class GuestbookService {
       id: noteId,
       authorName,
       content: dto.content,
-      noteShape: dto.noteShape,
+      noteShape,
       noteColor,
       status: 'pending',
     });
@@ -96,7 +98,7 @@ export class GuestbookService {
       id: noteId,
       authorName,
       content: dto.content,
-      noteShape: dto.noteShape as GuestbookNote['noteShape'],
+      noteShape,
       noteColor,
       positionX: 0,
       positionY: 0,
@@ -173,6 +175,40 @@ export class GuestbookService {
 
     this.logger.log(`留言审核拒绝，id=${id}`);
     return this.mapNote(updated[0]);
+  }
+
+  /** 用户删除自己的留言 / 管理员删除任意留言 */
+  async deleteNoteByUser(
+    id: string,
+    userId: string,
+    userRole: string,
+    userDisplayName?: string | null,
+    userName?: string,
+  ): Promise<void> {
+    const existing = await this.db
+      .select()
+      .from(guestbookNotes)
+      .where(eq(guestbookNotes.id, id));
+
+    if (existing.length === 0) {
+      throw new NotFoundException('留言不存在');
+    }
+
+    const note = existing[0];
+    const isAdmin: boolean = userRole === 'admin';
+    const isOwnNote: boolean =
+      (userDisplayName != null && userDisplayName !== '' && note.authorName === userDisplayName) ||
+      (userName != null && userName !== '' && note.authorName === userName);
+
+    if (!isAdmin && !isOwnNote) {
+      throw new ForbiddenException('无权删除该留言');
+    }
+
+    await this.db
+      .delete(guestbookNotes)
+      .where(eq(guestbookNotes.id, id));
+
+    this.logger.log(`留言已删除，id=${id}, userId=${userId}`);
   }
 
   /** 物理删除 */

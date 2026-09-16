@@ -5,6 +5,7 @@ import { eq, asc, sql, gte, and } from 'drizzle-orm';
 
 import { calendarEvents, siteUsers } from '@server/database/tables';
 import type { CalendarEvent } from '@shared/api.interface';
+import { AuthService } from '@server/modules/auth/auth.service';
 
 interface CreateCalendarDto {
   title: string;
@@ -30,6 +31,7 @@ export class CalendarService {
 
   constructor(
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    private readonly authService: AuthService,
   ) {}
 
   private toDto(row: CalendarRow): CalendarEvent {
@@ -141,7 +143,7 @@ export class CalendarService {
 
     const uploaderName: string | null =
       userRows.length > 0
-        ? userRows[0].displayName ?? userRows[0].username
+        ? await this.authService.getUserDisplayName(userId)
         : null;
     const uploaderAvatarUrl: string | null =
       userRows.length > 0 ? userRows[0].avatarUrl : null;
