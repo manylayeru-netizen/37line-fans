@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { Menu, X, LogIn, User, LogOut, Settings } from 'lucide-react';
 import { useAuthStore } from '@client/src/store/auth.store';
 import { Image } from '@client/src/components/ui/image';
+import { useAvatarUrl } from '@client/src/hooks/useAvatarUrl';
 
 // 丝带导航菜单项配置
 interface NavItem {
@@ -24,10 +25,11 @@ interface NavItem {
    return offsets[index % offsets.length];
  };
 
-const Layout = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const navigate = useNavigate();
+ const Layout = () => {
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+   const { user, isAuthenticated, logout } = useAuthStore();
+   const avatarUrl = useAvatarUrl(user?.avatarUrl);
+   const navigate = useNavigate();
 
   const isLoggedIn = isAuthenticated;
   const isAdmin = user?.role === 'admin';
@@ -89,12 +91,12 @@ const Layout = () => {
               {isLoggedIn ? (
                 <div className="relative group">
                   <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-paper hover:bg-paper/80 transition-colors shadow-sm border border-grid">
-                    {user?.avatarUrl ? (
-                      <Image
-                        src={user.avatarUrl}
-                        alt="头像"
-                        className="w-7 h-7 rounded-full object-cover"
-                      />
+                   {avatarUrl ? (
+                       <Image
+                         src={avatarUrl}
+                         alt="头像"
+                         className="w-7 h-7 rounded-full object-cover"
+                       />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-shiba flex items-center justify-center text-white text-sm font-handwriting">
                         <User size={14} />
@@ -228,16 +230,19 @@ const Layout = () => {
       </main>
 
       {/* 页脚 */}
-      <footer className="bg-paper/60 bg-grid-pattern mt-12">
-         <div className="h-40 flex flex-col items-center justify-center">
-           <p className="text-cocoa/60 text-sm mb-2">
-             © {new Date().getFullYear()} 37line.fans
-           </p>
-           <p className="font-handwriting text-lg text-ink">
-             谢谢你来过 37line 的小世界
-           </p>
-         </div>
-      </footer>
+       <footer className="bg-paper/60 bg-grid-pattern mt-12">
+          <div className="h-auto py-6 flex flex-col items-center justify-center">
+            <p className="text-cocoa/60 text-xs max-w-2xl text-center px-4 mb-3 leading-relaxed">
+              本站为粉丝自发建立的非营利性应援站点，与艺人及其所属经纪公司无官方关联。站内图文素材版权归原作者及版权方所有，如涉及侵权请联系我们删除。
+            </p>
+            <p className="text-cocoa/60 text-sm mb-2">
+              © {new Date().getFullYear()} 37line.fans
+            </p>
+            <p className="font-handwriting text-lg text-ink">
+              谢谢你来过 37line 的小世界
+            </p>
+          </div>
+       </footer>
     </div>
   );
 };

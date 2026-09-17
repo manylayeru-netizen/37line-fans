@@ -7,6 +7,7 @@ import { Button } from '@client/src/components/ui/button';
 import { useAuthStore } from '@client/src/store/auth.store';
 import { apiPost, apiPatch } from '@client/src/utils/api-client';
 import { updateDisplayName as updateDisplayNameApi } from '@client/src/api/auth';
+import { useAvatarUrl } from '@client/src/hooks/useAvatarUrl';
 import type {
   ChangePasswordRequest,
   SiteUser,
@@ -17,7 +18,8 @@ import { uploadImage } from '@client/src/utils/upload';
 
 const AccountSettingsPage = () => {
   const navigate = useNavigate();
-  const { user, logout, setUser } = useAuthStore();
+  const { user, logout, setUser, checkAuth, refreshAvatar } = useAuthStore();
+  const avatarUrl = useAvatarUrl(user?.avatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 修改密码表单状态
@@ -114,7 +116,9 @@ const AccountSettingsPage = () => {
       const res = await apiPatch<ApiResponse<SiteUser>>('/api/auth/avatar', {
         avatarUrl,
       });
-      setUser(res.data);
+      const updatedUser = res.data;
+      setUser(updatedUser);
+      refreshAvatar();
       toast.success('头像更新成功');
     } catch (err: unknown) {
       const msg =
@@ -142,13 +146,13 @@ const AccountSettingsPage = () => {
         </h2>
 
         <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            {user?.avatarUrl ? (
-              <Image
-                src={user.avatarUrl}
-                alt="头像"
-                className="w-20 h-20 rounded-full object-cover border-2 border-grid shadow-sm"
-              />
+           <div className="relative">
+             {avatarUrl ? (
+               <Image
+                 src={avatarUrl}
+                 alt="头像"
+                 className="w-20 h-20 rounded-full object-cover border-2 border-grid shadow-sm"
+               />
             ) : (
               <div className="w-20 h-20 rounded-full bg-shiba flex items-center justify-center text-white shadow-sm">
                 <User size={32} />

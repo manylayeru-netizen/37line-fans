@@ -254,6 +254,7 @@ const HomePage: React.FC = () => {
               >
                  <div className="flex items-center gap-2 mb-2 text-sm text-cocoa/60">
                    <span className="font-mono">{diary.entryDate}</span>
+                   {diary.submitterName && <span>· {diary.submitterName}</span>}
                  </div>
                 <h3 className="font-handwriting text-xl text-ink mb-2">{diary.title}</h3>
                 <p className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">

@@ -105,9 +105,10 @@ const DiaryPage: React.FC = () => {
                            <h2 className="font-handwriting text-xl sm:text-2xl md:text-3xl text-ink mb-2">
                              {entry.title}
                            </h2>
-                           <div className="flex flex-wrap items-center gap-3 text-sm text-cocoa/60 mb-3">
-                             {entry.author && <span>✍️ {entry.author}</span>}
-                             {entry.sourcePlatform && <span>📍 {entry.sourcePlatform}</span>}
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-cocoa/60 mb-3">
+                              {entry.author && <span>✍️ {entry.author}</span>}
+                              {entry.submitterName && <span>📮 投稿：{entry.submitterName}</span>}
+                              {entry.sourcePlatform && <span>📍 {entry.sourcePlatform}</span>}
                              <span
                                className={`px-2 py-0.5 rounded-full text-xs font-handwriting ${
                                  entry.completionStatus === 'completed'

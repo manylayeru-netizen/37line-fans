@@ -15,7 +15,6 @@ import {
   DialogClose,
 } from '@client/src/components/ui/dialog';
 import { toast } from 'sonner';
-import { showConfirm } from '@lark-apaas/client-toolkit';
 
 const LEGACY_SHAPE_TO_EMOJI: Record<string, string> = {
   shiba: '🐕',
@@ -99,6 +98,7 @@ const GuestbookPage: React.FC = () => {
 
   const [showForm, setShowForm] = useState(false);
   const [selectedNote, setSelectedNote] = useState<GuestbookNote | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateGuestbookNoteRequest>({
     authorName: '',
     content: '',
@@ -148,8 +148,14 @@ const GuestbookPage: React.FC = () => {
     }
   };
 
-  const handleDeleteNote = async (id: string) => {
-    if (!await showConfirm('确定要删除这条留言吗？')) return;
+  const handleDeleteNote = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const confirmDeleteNote = async () => {
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
+    if (!id) return;
     try {
       await deleteMyNote(id);
       setData((prev) => {
@@ -335,8 +341,35 @@ const GuestbookPage: React.FC = () => {
               </div>
             )}
           </DialogContent>
-        </Dialog>
-      </div>
+         </Dialog>
+
+         <Dialog open={!!deleteTargetId} onOpenChange={(open) => !open && setDeleteTargetId(null)}>
+           <DialogContent className="bg-paper border-none rounded-xl shadow-xl max-w-sm">
+             <DialogHeader>
+               <DialogTitle className="font-handwriting text-2xl text-ink text-center">
+                 🗑️ 确认删除
+               </DialogTitle>
+             </DialogHeader>
+             <p className="text-center text-cocoa/70 py-2">
+               确定要删除这条留言吗？此操作不可撤销哦~
+             </p>
+             <div className="flex gap-3 justify-center pt-2">
+               <button
+                 onClick={() => setDeleteTargetId(null)}
+                 className="px-5 py-2 rounded-full bg-cream text-cocoa hover:bg-cream/80 transition text-sm"
+               >
+                 再想想
+               </button>
+               <button
+                 onClick={confirmDeleteNote}
+                 className="px-5 py-2 rounded-full bg-shiba text-paper hover:bg-shiba/90 transition text-sm"
+               >
+                 确认删除
+               </button>
+             </div>
+           </DialogContent>
+         </Dialog>
+       </div>
     </div>
   );
 };

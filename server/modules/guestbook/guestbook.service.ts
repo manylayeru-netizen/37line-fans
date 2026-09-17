@@ -196,17 +196,22 @@ export class GuestbookService {
 
     const note = existing[0];
     const isAdmin: boolean = userRole === 'admin';
-    const isOwnNote: boolean =
+    const isOwnNoteByName: boolean =
       (userDisplayName != null && userDisplayName !== '' && note.authorName === userDisplayName) ||
       (userName != null && userName !== '' && note.authorName === userName);
 
-    if (!isAdmin && !isOwnNote) {
+    if (!isAdmin && !isOwnNoteByName) {
       throw new ForbiddenException('无权删除该留言');
     }
 
-    await this.db
+    const deleted = await this.db
       .delete(guestbookNotes)
-      .where(eq(guestbookNotes.id, id));
+      .where(eq(guestbookNotes.id, id))
+      .returning({ id: guestbookNotes.id });
+
+    if (deleted.length === 0) {
+      throw new NotFoundException('留言不存在');
+    }
 
     this.logger.log(`留言已删除，id=${id}, userId=${userId}`);
   }

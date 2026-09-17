@@ -59,9 +59,10 @@ const DiaryDetailPage: React.FC = () => {
              <header className="text-center mb-8 pb-8 border-b-2 border-dashed border-grid">
                <p className="font-handwriting text-base sm:text-xl text-cocoa/70 mb-2">{formatFullDate(entry.entryDate)}</p>
                 <h1 className="font-handwriting text-2xl sm:text-3xl md:text-5xl text-ink mb-4">{entry.title}</h1>
-               <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-cocoa/60">
-                 {entry.author && <span>✍️ {entry.author}</span>}
-                 {entry.sourcePlatform && <span>📍 {entry.sourcePlatform}</span>}
+                 <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-cocoa/60">
+                  {entry.author && <span>✍️ {entry.author}</span>}
+                  {entry.submitterName && <span>📮 投稿：{entry.submitterName}</span>}
+                  {entry.sourcePlatform && <span>📍 {entry.sourcePlatform}</span>}
                  <span
                    className={`px-2.5 py-0.5 rounded-full text-xs font-handwriting ${
                      entry.completionStatus === 'completed'

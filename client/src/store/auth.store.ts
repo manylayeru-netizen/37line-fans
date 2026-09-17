@@ -8,12 +8,14 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  avatarVersion: number;
 
   login: (username: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   setUser: (user: SiteUser) => void;
+  refreshAvatar: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -21,6 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   token: getToken(),
   isAuthenticated: false,
   isLoading: false,
+  avatarVersion: 0,
 
   login: async (username: string, password: string) => {
     set({ isLoading: true });
@@ -68,5 +71,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setUser: (user: SiteUser) => {
     set({ user });
+  },
+
+  refreshAvatar: () => {
+    set((state) => ({ avatarVersion: state.avatarVersion + 1 }));
   },
 }));

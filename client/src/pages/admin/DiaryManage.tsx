@@ -293,14 +293,13 @@ const DiaryManagePage: React.FC = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-cocoa/50">
+                <td colSpan={7} className="text-center py-12 text-cocoa/50">
                   加载中...
                 </td>
               </tr>
             ) : entries.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center py-12 text-cocoa/50">
-                  暂无数据
+                <td colSpan={7} className="text-center py-12 text-cocoa/50">
                 </td>
               </tr>
             ) : (
