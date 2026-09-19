@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq, desc, count, asc, and } from 'drizzle-orm';
+import { eq, desc, count, asc, and, sql } from 'drizzle-orm';
 
 import { collectionCards, siteUsers } from '@server/database/tables';
 import type { CollectionCard, PagedResponse } from '@shared/api.interface';
@@ -165,13 +165,20 @@ export class CollectionService {
   async getFeatured(limit: number = 6): Promise<CollectionCard[]> {
     const rows = await this.db
       .select({
-        card: collectionCards,
+        id: collectionCards.id,
+        title: collectionCards.title,
+        imageUrl: collectionCards.imageUrl,
+        category: collectionCards.category,
+        sortOrder: collectionCards.sortOrder,
+        rotationDegree: collectionCards.rotationDegree,
+        uploaderId: collectionCards.uploaderId,
         uploader_username: siteUsers.username,
         uploader_display_name: siteUsers.displayName,
         uploader_avatar_url: siteUsers.avatarUrl,
       })
       .from(collectionCards)
       .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
+      .where(sql`TRIM(BOTH FROM ${collectionCards.category}) = ${'官图'}`)
       .orderBy(asc(collectionCards.sortOrder), desc(collectionCards.createdAt))
       .limit(limit);
 
@@ -179,7 +186,21 @@ export class CollectionService {
       const uploader = row.uploader_username != null
         ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
         : null;
-      return this.toDto(row.card, uploader);
+      const resolvedName: string | undefined = uploader
+        ? uploader.displayName ?? uploader.username ?? undefined
+        : undefined;
+      const resolvedAvatar: string | undefined = uploader?.avatarUrl ?? undefined;
+      return {
+        id: row.id,
+        title: row.title,
+        imageUrl: row.imageUrl,
+        category: row.category ?? 'photocard',
+        sortOrder: row.sortOrder ?? 0,
+        rotationDegree: row.rotationDegree ?? 0,
+        uploaderId: row.uploaderId ?? undefined,
+        uploaderName: resolvedName,
+        uploaderAvatarUrl: resolvedAvatar,
+      };
     });
   }
 
@@ -197,7 +218,7 @@ export class CollectionService {
         title: dto.title,
         description: dto.description ?? null,
         imageUrl: dto.imageUrl,
-        category: dto.category ?? 'photocard',
+        category: (dto.category ?? 'photocard').trim() || 'photocard',
         sortOrder: dto.sortOrder ?? 0,
         rotationDegree: dto.rotationDegree ?? 0,
         uploaderId: uploader ? uploader.id : null,
@@ -248,7 +269,7 @@ export class CollectionService {
     if (dto.title !== undefined) patch.title = dto.title;
     if (dto.description !== undefined) patch.description = dto.description ?? null;
     if (dto.imageUrl !== undefined) patch.imageUrl = dto.imageUrl;
-    if (dto.category !== undefined) patch.category = dto.category;
+    if (dto.category !== undefined) patch.category = dto.category.trim() || null;
     if (dto.sortOrder !== undefined) patch.sortOrder = dto.sortOrder;
     if (dto.rotationDegree !== undefined) patch.rotationDegree = dto.rotationDegree;
 

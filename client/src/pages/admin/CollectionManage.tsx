@@ -9,6 +9,8 @@ import {
   List,
   Upload,
   Loader2,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -21,18 +23,36 @@ import {
 import { Input } from '@client/src/components/ui/input';
 import { Textarea } from '@client/src/components/ui/textarea';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@client/src/components/ui/select';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@client/src/components/ui/popover';
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+} from '@client/src/components/ui/command';
 import { Button } from '@client/src/components/ui/button';
 import { Badge } from '@client/src/components/ui/badge';
 import { collectionApi } from '@client/src/api';
 import { uploadImage } from '@client/src/utils/upload';
 import type { CollectionCard } from '@shared/api.interface';
 import { Image } from '@client/src/components/ui/image';
+
+const PRESET_CATEGORIES: string[] = [
+  '官图',
+  '饭拍',
+  '扫图',
+  '周边',
+  '杂志',
+  '小卡',
+  '手绘',
+  '其他',
+];
 
 interface CollectionManageProps {
   // no props needed
@@ -638,20 +658,101 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
               <label className="block text-sm font-medium text-cocoa mb-1.5">
                 分类
               </label>
-              <Input
-                value={form.category}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, category: e.target.value }))
-                }
-                placeholder="输入分类名称，如：小卡/周边/杂志..."
-                className="bg-cream/50"
-                list="category-datalist"
-              />
-              <datalist id="category-datalist">
-                {categories.map((cat) => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border border-input bg-cream/50 px-3 py-2 text-sm text-ink placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-shiba/40 disabled:cursor-not-allowed disabled:opacity-50 h-9"
+                  >
+                    <span className={form.category ? 'text-ink' : 'text-cocoa/50'}>
+                      {form.category || '选择或输入分类...'}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0 bg-paper border-2 border-dashed border-grid">
+                  <Command className="bg-transparent">
+                    <CommandInput
+                      placeholder="搜索分类..."
+                      className="h-9"
+                      value={form.category}
+                      onValueChange={(val: string) =>
+                        setForm((f) => ({ ...f, category: val }))
+                      }
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        <button
+                          type="button"
+                          className="w-full text-left px-2 py-1.5 text-sm text-cocoa hover:bg-cream/50 rounded-sm"
+                          onClick={() => {
+                            // 已通过 onValueChange 实时同步，无需额外操作
+                          }}
+                        >
+                          <Plus className="inline w-3 h-3 mr-1" />
+                          创建 &quot;{form.category || '新分类'}&quot;
+                        </button>
+                      </CommandEmpty>
+                      <CommandGroup heading="预设分类">
+                        {PRESET_CATEGORIES.map((cat) => (
+                          <CommandItem
+                            key={cat}
+                            value={cat}
+                            onSelect={() => {
+                              setForm((f) => ({ ...f, category: cat }));
+                            }}
+                            className="text-sm"
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                form.category === cat
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              }`}
+                            />
+                            {cat}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {categories.filter(
+                        (cat) => !PRESET_CATEGORIES.includes(cat),
+                      ).length > 0 && (
+                        <>
+                          <CommandSeparator />
+                          <CommandGroup heading="已有分类">
+                            {categories
+                              .filter(
+                                (cat) => !PRESET_CATEGORIES.includes(cat),
+                              )
+                              .map((cat) => (
+                                <CommandItem
+                                  key={cat}
+                                  value={cat}
+                                  onSelect={() => {
+                                    setForm((f) => ({
+                                      ...f,
+                                      category: cat,
+                                    }));
+                                  }}
+                                  className="text-sm"
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${
+                                      form.category === cat
+                                        ? 'opacity-100'
+                                        : 'opacity-0'
+                                    }`}
+                                  />
+                                  {cat}
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
