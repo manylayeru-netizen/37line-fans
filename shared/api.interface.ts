@@ -91,6 +91,8 @@ export interface DiaryEntry {
   rejectReason?: string;
   submitterId?: string;
   submitterName?: string;
+  submitterAvatarUrl?: string;
+  sourceUrl?: string;
   reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -113,6 +115,25 @@ export interface CalendarEvent {
   uploaderId?: string;
   uploaderName?: string;
   uploaderAvatarUrl?: string;
+  sourceUrl?: string;
+}
+
+export interface CreateCalendarEventRequest {
+  title: string;
+  eventDate: string;
+  description?: string;
+  hasCrown?: boolean;
+  eventType?: string;
+  sourceUrl?: string;
+}
+
+export interface BatchCreateCalendarEventsRequest {
+  items: CreateCalendarEventRequest[];
+}
+
+export interface BatchCreateCalendarEventsResponse {
+  items: CalendarEvent[];
+  createdCount: number;
 }
 
 // === 收集册 ===
@@ -180,11 +201,12 @@ export interface LiteraturePost {
   status: 'pending' | 'published' | 'rejected';
   rejectReason?: string;
   authorUserId?: string;
+  authorDisplayName?: string;
+  authorAvatarUrl?: string;
   tags: LiteratureTag[];
   reviewAt?: string;
   createdAt: string;
   updatedAt: string;
-  authorDisplayName?: string;
 }
 
 export interface LiteratureComment {
@@ -193,9 +215,10 @@ export interface LiteratureComment {
   content: string;
   userId?: string;
   guestName?: string;
+  displayName?: string;
+  avatarUrl?: string;
   status: string;
   createdAt: string;
-  displayName?: string;
 }
 
 export interface LiteraturePostQuery {
@@ -230,6 +253,42 @@ export interface ReviewApplicationRequest {
   rejectReason?: string;
 }
 
+// === 那年今日 (首页聚合) ===
+export interface OnThisDayCalendarEvent {
+  id: string;
+  title: string;
+  eventDate: string;
+  description?: string;
+  sourceUrl?: string;
+  type: 'calendar';
+}
+
+export interface OnThisDayPhoto {
+  id: string;
+  title: string;
+  imageUrl: string;
+  category: string;
+  type: 'photo';
+}
+
+export interface OnThisDayDiaryEntry {
+  id: string;
+  title: string;
+  entryDate: string;
+  weather: string;
+  type: 'diary';
+}
+
+export interface OnThisDayResponse {
+  hasContent: boolean;
+  month: number;
+  day: number;
+  events: OnThisDayCalendarEvent[];
+  photos: OnThisDayPhoto[];
+  diaryEntries: OnThisDayDiaryEntry[];
+}
+
+// === 管理后台统计 ===
 export interface AdminStats {
   totalUsers: number;
   todayNewUsers: number;

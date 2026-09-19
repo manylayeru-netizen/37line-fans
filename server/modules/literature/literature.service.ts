@@ -25,6 +25,7 @@ import {
   literatureTags,
   literaturePostTags,
   literatureComments,
+  siteUsers,
 } from '@server/database/tables';
 import type {
   LiteraturePost,
@@ -39,6 +40,20 @@ import { ContentFilterService } from '@server/common/services/content-filter.ser
 
 type PostStatus = 'pending' | 'published' | 'rejected';
 type CommentStatus = 'approved' | 'pending' | 'rejected';
+
+interface PostWithAuthor {
+  post: typeof literaturePosts.$inferSelect;
+  author_username: string | null;
+  author_display_name: string | null;
+  author_avatar_url: string | null;
+}
+
+interface CommentWithUser {
+  comment: typeof literatureComments.$inferSelect;
+  user_username: string | null;
+  user_display_name: string | null;
+  user_avatar_url: string | null;
+}
 
 @Injectable()
 export class LiteratureService {
@@ -178,8 +193,14 @@ export class LiteratureService {
         .from(literaturePosts)
         .where(whereClause),
       this.db
-        .select()
+        .select({
+          post: literaturePosts,
+          author_username: siteUsers.username,
+          author_display_name: siteUsers.displayName,
+          author_avatar_url: siteUsers.avatarUrl,
+        })
         .from(literaturePosts)
+        .leftJoin(siteUsers, eq(literaturePosts.authorUserId, siteUsers.id))
         .where(whereClause)
         .orderBy(desc(literaturePosts.createdAt))
         .limit(pageSize)
@@ -188,7 +209,7 @@ export class LiteratureService {
 
     const total: number = Number(totalResult[0]?.count ?? 0);
     const items = await this.attachTagsToPosts(
-      posts.map((p) => this.mapPost(p)),
+      posts.map((p) => this.mapPostJoined(p)),
     );
 
     return { items, total, page, pageSize };
@@ -196,8 +217,14 @@ export class LiteratureService {
 
   async getPostDetail(id: string): Promise<LiteraturePost> {
     const posts = await this.db
-      .select()
+      .select({
+        post: literaturePosts,
+        author_username: siteUsers.username,
+        author_display_name: siteUsers.displayName,
+        author_avatar_url: siteUsers.avatarUrl,
+      })
       .from(literaturePosts)
+      .leftJoin(siteUsers, eq(literaturePosts.authorUserId, siteUsers.id))
       .where(
         and(
           eq(literaturePosts.id, id),
@@ -210,7 +237,7 @@ export class LiteratureService {
       throw new NotFoundException('帖子不存在');
     }
 
-    const items = await this.attachTagsToPosts([this.mapPost(posts[0])]);
+    const items = await this.attachTagsToPosts([this.mapPostJoined(posts[0])]);
     return items[0];
   }
 
@@ -292,7 +319,7 @@ export class LiteratureService {
     this.logger.log(
       `帖子提交成功，id=${result.id}，作者=${authorUserId}，status=${isAdmin ? 'published' : 'pending'}`,
     );
-    const items = await this.attachTagsToPosts([this.mapPost(result)]);
+    const items = await this.attachTagsToPosts([await this.findPostWithAuthorById(result.id)]);
     return items[0];
   }
 
@@ -333,8 +360,25 @@ export class LiteratureService {
             .where(whereClause)
         : this.db.select({ count: count() }).from(literaturePosts),
       (whereClause
-        ? this.db.select().from(literaturePosts).where(whereClause)
-        : this.db.select().from(literaturePosts)
+        ? this.db
+            .select({
+              post: literaturePosts,
+              author_username: siteUsers.username,
+              author_display_name: siteUsers.displayName,
+              author_avatar_url: siteUsers.avatarUrl,
+            })
+            .from(literaturePosts)
+            .leftJoin(siteUsers, eq(literaturePosts.authorUserId, siteUsers.id))
+            .where(whereClause)
+        : this.db
+            .select({
+              post: literaturePosts,
+              author_username: siteUsers.username,
+              author_display_name: siteUsers.displayName,
+              author_avatar_url: siteUsers.avatarUrl,
+            })
+            .from(literaturePosts)
+            .leftJoin(siteUsers, eq(literaturePosts.authorUserId, siteUsers.id))
       )
         .orderBy(desc(literaturePosts.createdAt))
         .limit(pageSize)
@@ -343,7 +387,7 @@ export class LiteratureService {
 
     const total: number = Number(totalResult[0]?.count ?? 0);
     const items = await this.attachTagsToPosts(
-      posts.map((p) => this.mapPost(p)),
+      posts.map((p) => this.mapPostJoined(p)),
     );
 
     return { items, total, page, pageSize };
@@ -379,7 +423,7 @@ export class LiteratureService {
     this.logger.log(
       `帖子审核完成，id=${id}，status=${dto.status}`,
     );
-    const items = await this.attachTagsToPosts([this.mapPost(updated[0])]);
+    const items = await this.attachTagsToPosts([await this.findPostWithAuthorById(id)]);
     return items[0];
   }
 
@@ -458,7 +502,7 @@ export class LiteratureService {
     });
 
     this.logger.log(`帖子已更新，id=${id}`);
-    const items = await this.attachTagsToPosts([this.mapPost(result)]);
+    const items = await this.attachTagsToPosts([await this.findPostWithAuthorById(id)]);
     return items[0];
   }
 
@@ -528,8 +572,14 @@ export class LiteratureService {
           ),
         ),
       this.db
-        .select()
+        .select({
+          comment: literatureComments,
+          user_username: siteUsers.username,
+          user_display_name: siteUsers.displayName,
+          user_avatar_url: siteUsers.avatarUrl,
+        })
         .from(literatureComments)
+        .leftJoin(siteUsers, eq(literatureComments.userId, siteUsers.id))
         .where(
           and(
             eq(literatureComments.postId, postId),
@@ -544,7 +594,7 @@ export class LiteratureService {
     const total: number = Number(totalResult[0]?.count ?? 0);
 
     return {
-      items: comments.map((c) => this.mapComment(c)),
+      items: comments.map((c) => this.mapCommentJoined(c)),
       total,
       page,
       pageSize,
@@ -611,7 +661,7 @@ export class LiteratureService {
     }
 
     this.logger.log(`评论发表成功，id=${inserted[0].id}`);
-    return this.mapComment(inserted[0]);
+    return this.findCommentWithUserById(inserted[0].id);
   }
 
   async getAdminComments(
@@ -634,8 +684,25 @@ export class LiteratureService {
             .where(statusCondition)
         : this.db.select({ count: count() }).from(literatureComments),
       (statusCondition
-        ? this.db.select().from(literatureComments).where(statusCondition)
-        : this.db.select().from(literatureComments)
+        ? this.db
+            .select({
+              comment: literatureComments,
+              user_username: siteUsers.username,
+              user_display_name: siteUsers.displayName,
+              user_avatar_url: siteUsers.avatarUrl,
+            })
+            .from(literatureComments)
+            .leftJoin(siteUsers, eq(literatureComments.userId, siteUsers.id))
+            .where(statusCondition)
+        : this.db
+            .select({
+              comment: literatureComments,
+              user_username: siteUsers.username,
+              user_display_name: siteUsers.displayName,
+              user_avatar_url: siteUsers.avatarUrl,
+            })
+            .from(literatureComments)
+            .leftJoin(siteUsers, eq(literatureComments.userId, siteUsers.id))
       )
         .orderBy(desc(literatureComments.createdAt))
         .limit(pageSize)
@@ -645,7 +712,7 @@ export class LiteratureService {
     const total: number = Number(totalResult[0]?.count ?? 0);
 
     return {
-      items: comments.map((c) => this.mapComment(c)),
+      items: comments.map((c) => this.mapCommentJoined(c)),
       total,
       page,
       pageSize,
@@ -742,6 +809,52 @@ export class LiteratureService {
     };
   }
 
+  private mapPostJoined(row: PostWithAuthor): LiteraturePost {
+    const author = row.author_username != null
+      ? { username: row.author_username, displayName: row.author_display_name, avatarUrl: row.author_avatar_url }
+      : null;
+    const displayName: string | undefined = author
+      ? author.displayName ?? author.username ?? undefined
+      : undefined;
+    return {
+      id: row.post.id,
+      title: row.post.title,
+      author: row.post.author,
+      sourcePlatform: row.post.sourcePlatform ?? undefined,
+      content: row.post.content,
+      recommendationReason: row.post.recommendationReason ?? undefined,
+      status: row.post.status as LiteraturePost['status'],
+      rejectReason: row.post.rejectReason ?? undefined,
+      authorUserId: row.post.authorUserId ?? undefined,
+      authorDisplayName: displayName,
+      authorAvatarUrl: author?.avatarUrl ?? undefined,
+      tags: [], // 由 attachTagsToPosts 填充
+      reviewAt: row.post.reviewedAt ? row.post.reviewedAt.toISOString() : undefined,
+      createdAt: row.post.createdAt.toISOString(),
+      updatedAt: row.post.updatedAt.toISOString(),
+    };
+  }
+
+  private async findPostWithAuthorById(id: string): Promise<LiteraturePost> {
+    const rows = await this.db
+      .select({
+        post: literaturePosts,
+        author_username: siteUsers.username,
+        author_display_name: siteUsers.displayName,
+        author_avatar_url: siteUsers.avatarUrl,
+      })
+      .from(literaturePosts)
+      .leftJoin(siteUsers, eq(literaturePosts.authorUserId, siteUsers.id))
+      .where(eq(literaturePosts.id, id))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException('帖子不存在');
+    }
+
+    return this.mapPostJoined(rows[0]);
+  }
+
   private mapComment(
     row: typeof literatureComments.$inferSelect,
   ): LiteratureComment {
@@ -754,5 +867,49 @@ export class LiteratureService {
       status: row.status,
       createdAt: row.createdAt.toISOString(),
     };
+  }
+
+  private mapCommentJoined(row: CommentWithUser): LiteratureComment {
+    const user = row.user_username != null
+      ? { username: row.user_username, displayName: row.user_display_name, avatarUrl: row.user_avatar_url }
+      : null;
+    // 登录用户：displayName = displayName ?? username
+    const displayName: string | undefined = user
+      ? user.displayName ?? user.username ?? undefined
+      : undefined;
+    // 游客：displayName = guestName
+    const finalDisplayName: string | undefined = user ? displayName : (row.comment.guestName ?? undefined);
+
+    return {
+      id: row.comment.id,
+      postId: row.comment.postId,
+      content: row.comment.content,
+      userId: row.comment.userId ?? undefined,
+      guestName: row.comment.guestName ?? undefined,
+      displayName: finalDisplayName,
+      avatarUrl: user?.avatarUrl ?? undefined,
+      status: row.comment.status,
+      createdAt: row.comment.createdAt.toISOString(),
+    };
+  }
+
+  private async findCommentWithUserById(id: string): Promise<LiteratureComment> {
+    const rows = await this.db
+      .select({
+        comment: literatureComments,
+        user_username: siteUsers.username,
+        user_display_name: siteUsers.displayName,
+        user_avatar_url: siteUsers.avatarUrl,
+      })
+      .from(literatureComments)
+      .leftJoin(siteUsers, eq(literatureComments.userId, siteUsers.id))
+      .where(eq(literatureComments.id, id))
+      .limit(1);
+
+    if (rows.length === 0) {
+      throw new NotFoundException('评论不存在');
+    }
+
+    return this.mapCommentJoined(rows[0]);
   }
 }

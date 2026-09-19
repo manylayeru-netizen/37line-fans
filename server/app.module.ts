@@ -15,6 +15,7 @@ import { CollectionModule } from './modules/collection/collection.module';
 import { GuestbookModule } from './modules/guestbook/guestbook.module';
 import { LiteratureModule } from './modules/literature/literature.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { HomeModule } from './modules/home/home.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ViewModule } from './modules/view/view.module';
 
@@ -29,6 +30,7 @@ import { ViewModule } from './modules/view/view.module';
     GuestbookModule,
     LiteratureModule,
     AdminModule,
+    HomeModule,
     UploadModule,
     ViewModule,
   ],

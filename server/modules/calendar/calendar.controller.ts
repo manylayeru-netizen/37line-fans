@@ -14,7 +14,7 @@ import type { Request } from 'express';
 
 import { CalendarService } from './calendar.service';
 import { AuthGuard, AdminGuard } from '@server/common/guards/auth.guard';
-import type { ApiResponse, CalendarEvent } from '@shared/api.interface';
+import type { ApiResponse, CalendarEvent, BatchCreateCalendarEventsRequest, BatchCreateCalendarEventsResponse } from '@shared/api.interface';
 
 @Controller('api/calendar')
 export class CalendarController {
@@ -50,12 +50,24 @@ export class CalendarController {
       description?: string;
       hasCrown?: boolean;
       eventType?: string;
+      sourceUrl?: string;
     },
   ): Promise<ApiResponse<CalendarEvent>> {
     const { userId } = req.user;
     const data: CalendarEvent = await this.calendarService.createWithUploader(
       body,
       userId,
+    );
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AdminGuard)
+  @Post('events/batch')
+  async batchCreate(
+    @Body() body: BatchCreateCalendarEventsRequest,
+  ): Promise<ApiResponse<BatchCreateCalendarEventsResponse>> {
+    const data: BatchCreateCalendarEventsResponse = await this.calendarService.batchCreate(
+      body.items,
     );
     return { code: 0, message: 'ok', data };
   }
@@ -70,6 +82,7 @@ export class CalendarController {
       description?: string;
       hasCrown?: boolean;
       eventType?: string;
+      sourceUrl?: string;
     },
   ): Promise<ApiResponse<CalendarEvent>> {
     const data: CalendarEvent = await this.calendarService.update(id, body);

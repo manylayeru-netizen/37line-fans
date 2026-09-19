@@ -1,7 +1,7 @@
 import {
   apiGet,
   apiPost,
-  apiPut,
+  apiPatch,
   apiDelete,
 } from '@client/src/utils/api-client';
 import type {
@@ -55,7 +55,7 @@ export async function updateCollectionCard(
   id: string,
   data: Partial<CollectionCard>,
 ): Promise<CollectionCard> {
-  const res = await apiPut<{ data: CollectionCard }>(
+  const res = await apiPatch<{ data: CollectionCard }>(
     `/api/collection/${id}`,
     data,
   );

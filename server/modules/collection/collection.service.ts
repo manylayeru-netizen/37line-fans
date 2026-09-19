@@ -49,7 +49,15 @@ export class CollectionService {
     private readonly authService: AuthService,
   ) {}
 
-  private toDto(row: CollectionRow): CollectionCard {
+  private toDto(
+    row: CollectionRow,
+    uploader?: { username: string | null; displayName: string | null; avatarUrl: string | null } | null,
+  ): CollectionCard {
+    const resolvedName: string | undefined = uploader
+      ? uploader.displayName ?? uploader.username ?? undefined
+      : undefined;
+    const resolvedAvatar: string | undefined = uploader?.avatarUrl ?? undefined;
+
     return {
       id: row.id,
       title: row.title,
@@ -59,9 +67,32 @@ export class CollectionService {
       sortOrder: row.sortOrder ?? 0,
       rotationDegree: row.rotationDegree ?? 0,
       uploaderId: row.uploaderId ?? undefined,
-      uploaderName: row.uploaderName ?? undefined,
-      uploaderAvatarUrl: row.uploaderAvatarUrl ?? undefined,
+      uploaderName: resolvedName,
+      uploaderAvatarUrl: resolvedAvatar,
     };
+  }
+
+  private async findWithUploaderById(id: string): Promise<CollectionCard> {
+    const rows = await this.db
+      .select({
+        card: collectionCards,
+        uploader_username: siteUsers.username,
+        uploader_display_name: siteUsers.displayName,
+        uploader_avatar_url: siteUsers.avatarUrl,
+      })
+      .from(collectionCards)
+      .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
+      .where(eq(collectionCards.id, id));
+
+    if (rows.length === 0) {
+      throw new NotFoundException('收集册卡片不存在');
+    }
+
+    const row = rows[0];
+    const uploader = row.uploader_username != null
+      ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
+      : null;
+    return this.toDto(row.card, uploader);
   }
 
   async getList(params: CollectionListParams): Promise<PagedResponse<CollectionCard>> {
@@ -74,8 +105,25 @@ export class CollectionService {
     }
 
     const baseQuery = conditions.length > 0
-      ? this.db.select().from(collectionCards).where(and(...conditions))
-      : this.db.select().from(collectionCards);
+      ? this.db
+          .select({
+            card: collectionCards,
+            uploader_username: siteUsers.username,
+            uploader_display_name: siteUsers.displayName,
+            uploader_avatar_url: siteUsers.avatarUrl,
+          })
+          .from(collectionCards)
+          .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
+          .where(and(...conditions))
+      : this.db
+          .select({
+            card: collectionCards,
+            uploader_username: siteUsers.username,
+            uploader_display_name: siteUsers.displayName,
+            uploader_avatar_url: siteUsers.avatarUrl,
+          })
+          .from(collectionCards)
+          .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id));
 
     const [rows, countRows] = await Promise.all([
       baseQuery
@@ -88,22 +136,18 @@ export class CollectionService {
     ]);
 
     const total = Number(countRows[0]?.count ?? 0);
-    const items: CollectionCard[] = rows.map((row: CollectionRow) => this.toDto(row));
+    const items: CollectionCard[] = rows.map((row) => {
+      const uploader = row.uploader_username != null
+        ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
+        : null;
+      return this.toDto(row.card, uploader);
+    });
 
     return { items, total, page, pageSize };
   }
 
   async getById(id: string): Promise<CollectionCard> {
-    const rows: CollectionRow[] = await this.db
-      .select()
-      .from(collectionCards)
-      .where(eq(collectionCards.id, id));
-
-    if (rows.length === 0) {
-      throw new NotFoundException('收集册卡片不存在');
-    }
-
-    return this.toDto(rows[0]);
+    return this.findWithUploaderById(id);
   }
 
   async getCategories(): Promise<string[]> {
@@ -119,13 +163,24 @@ export class CollectionService {
   }
 
   async getFeatured(limit: number = 6): Promise<CollectionCard[]> {
-    const rows: CollectionRow[] = await this.db
-      .select()
+    const rows = await this.db
+      .select({
+        card: collectionCards,
+        uploader_username: siteUsers.username,
+        uploader_display_name: siteUsers.displayName,
+        uploader_avatar_url: siteUsers.avatarUrl,
+      })
       .from(collectionCards)
+      .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
       .orderBy(asc(collectionCards.sortOrder), desc(collectionCards.createdAt))
       .limit(limit);
 
-    return rows.map((row: CollectionRow) => this.toDto(row));
+    return rows.map((row) => {
+      const uploader = row.uploader_username != null
+        ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
+        : null;
+      return this.toDto(row.card, uploader);
+    });
   }
 
   async create(
@@ -152,7 +207,7 @@ export class CollectionService {
       .returning();
 
     this.logger.log(`创建收集册卡片: ${rows[0].id}`);
-    return this.toDto(rows[0]);
+    return this.findWithUploaderById(rows[0].id);
   }
 
   async createWithUploader(
@@ -201,6 +256,8 @@ export class CollectionService {
       throw new BadRequestException('未提供可更新字段');
     }
 
+    patch.updatedAt = new Date();
+
     const rows: CollectionRow[] = await this.db
       .update(collectionCards)
       .set(patch)
@@ -212,7 +269,7 @@ export class CollectionService {
     }
 
     this.logger.log(`更新收集册卡片: ${id}`);
-    return this.toDto(rows[0]);
+    return this.findWithUploaderById(id);
   }
 
   async delete(id: string): Promise<void> {

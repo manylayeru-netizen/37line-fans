@@ -3,7 +3,14 @@ import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, desc, count, and } from 'drizzle-orm';
 
-import { diaryEntries } from '@server/database/tables';
+import { diaryEntries, siteUsers } from '@server/database/tables';
+
+interface DiaryWithSubmitter {
+  entry: typeof diaryEntries.$inferSelect;
+  submitter_username: string | null;
+  submitter_display_name: string | null;
+  submitter_avatar_url: string | null;
+}
 import type { DiaryEntry, PagedResponse } from '@shared/api.interface';
 import { AuthService } from '@server/modules/auth/auth.service';
 
@@ -17,6 +24,7 @@ interface CreateDiaryDto {
   sortOrder?: number;
   author?: string;
   sourcePlatform?: string;
+  sourceUrl?: string;
   completionStatus?: 'completed' | 'ongoing';
   contentWarnings?: string[];
   characterBackground?: string;
@@ -33,6 +41,7 @@ interface UpdateDiaryDto {
   sortOrder?: number;
   author?: string;
   sourcePlatform?: string;
+  sourceUrl?: string;
   completionStatus?: 'completed' | 'ongoing';
   contentWarnings?: string[];
   characterBackground?: string;
@@ -56,7 +65,15 @@ export class DiaryService {
     private readonly authService: AuthService,
   ) {}
 
-  private toDto(row: DiaryRow): DiaryEntry {
+  private toDto(
+    row: DiaryRow,
+    submitter?: { username: string | null; displayName: string | null; avatarUrl: string | null } | null,
+  ): DiaryEntry {
+    const resolvedName: string | undefined = submitter
+      ? submitter.displayName ?? submitter.username ?? undefined
+      : undefined;
+    const resolvedAvatar: string | undefined = submitter?.avatarUrl ?? undefined;
+
     return {
       id: row.id,
       title: row.title,
@@ -68,6 +85,7 @@ export class DiaryService {
       sortOrder: row.sortOrder ?? 0,
       author: row.author ?? '',
       sourcePlatform: row.sourcePlatform ?? undefined,
+      sourceUrl: row.sourceUrl ?? undefined,
       completionStatus: (row.completionStatus as 'completed' | 'ongoing') ?? 'completed',
       contentWarnings: row.contentWarnings ?? [],
       characterBackground: row.characterBackground ?? undefined,
@@ -75,10 +93,41 @@ export class DiaryService {
       rejectReason: row.rejectReason ?? undefined,
       reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : undefined,
       submitterId: row.submitterId ?? undefined,
-      submitterName: row.submitterName ?? undefined,
+      submitterName: resolvedName,
+      submitterAvatarUrl: resolvedAvatar,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
     };
+  }
+
+  private async findWithSubmitterById(id: string): Promise<DiaryEntry> {
+    const rows = await this.db
+      .select({
+        entry: diaryEntries,
+        submitter_username: siteUsers.username,
+        submitter_display_name: siteUsers.displayName,
+        submitter_avatar_url: siteUsers.avatarUrl,
+      })
+      .from(diaryEntries)
+      .leftJoin(siteUsers, eq(diaryEntries.submitterId, siteUsers.id))
+      .where(eq(diaryEntries.id, id));
+
+    if (rows.length === 0) {
+      throw new NotFoundException('日记不存在');
+    }
+
+    const row = rows[0];
+    const submitter = row.submitter_username != null
+      ? { username: row.submitter_username, displayName: row.submitter_display_name, avatarUrl: row.submitter_avatar_url }
+      : null;
+    return this.toDto(row.entry, submitter);
+  }
+
+  private mapJoinedRow(row: DiaryWithSubmitter): DiaryEntry {
+    const submitter = row.submitter_username != null
+      ? { username: row.submitter_username, displayName: row.submitter_display_name, avatarUrl: row.submitter_avatar_url }
+      : null;
+    return this.toDto(row.entry, submitter);
   }
 
   async getList(params: DiaryListParams): Promise<PagedResponse<DiaryEntry>> {
@@ -91,8 +140,25 @@ export class DiaryService {
     }
 
     const baseQuery = conditions.length > 0
-      ? this.db.select().from(diaryEntries).where(and(...conditions))
-      : this.db.select().from(diaryEntries);
+      ? this.db
+          .select({
+            entry: diaryEntries,
+            submitter_username: siteUsers.username,
+            submitter_display_name: siteUsers.displayName,
+            submitter_avatar_url: siteUsers.avatarUrl,
+          })
+          .from(diaryEntries)
+          .leftJoin(siteUsers, eq(diaryEntries.submitterId, siteUsers.id))
+          .where(and(...conditions))
+      : this.db
+          .select({
+            entry: diaryEntries,
+            submitter_username: siteUsers.username,
+            submitter_display_name: siteUsers.displayName,
+            submitter_avatar_url: siteUsers.avatarUrl,
+          })
+          .from(diaryEntries)
+          .leftJoin(siteUsers, eq(diaryEntries.submitterId, siteUsers.id));
 
     const [rows, countRows] = await Promise.all([
       baseQuery
@@ -105,33 +171,30 @@ export class DiaryService {
     ]);
 
     const total = Number(countRows[0]?.count ?? 0);
-    const items: DiaryEntry[] = rows.map((row: DiaryRow) => this.toDto(row));
+    const items: DiaryEntry[] = rows.map((row: DiaryWithSubmitter) => this.mapJoinedRow(row));
 
     return { items, total, page, pageSize };
   }
 
   async getById(id: string): Promise<DiaryEntry> {
-    const rows: DiaryRow[] = await this.db
-      .select()
-      .from(diaryEntries)
-      .where(eq(diaryEntries.id, id));
-
-    if (rows.length === 0) {
-      throw new NotFoundException('日记不存在');
-    }
-
-    return this.toDto(rows[0]);
+    return this.findWithSubmitterById(id);
   }
 
   async getLatest(limit: number = 3): Promise<DiaryEntry[]> {
-    const rows: DiaryRow[] = await this.db
-      .select()
+    const rows: DiaryWithSubmitter[] = await this.db
+      .select({
+        entry: diaryEntries,
+        submitter_username: siteUsers.username,
+        submitter_display_name: siteUsers.displayName,
+        submitter_avatar_url: siteUsers.avatarUrl,
+      })
       .from(diaryEntries)
+      .leftJoin(siteUsers, eq(diaryEntries.submitterId, siteUsers.id))
       .where(eq(diaryEntries.status, 'published'))
       .orderBy(desc(diaryEntries.entryDate), desc(diaryEntries.sortOrder))
       .limit(limit);
 
-    return rows.map((row: DiaryRow) => this.toDto(row));
+    return rows.map((row: DiaryWithSubmitter) => this.mapJoinedRow(row));
   }
 
   async create(dto: CreateDiaryDto): Promise<DiaryEntry> {
@@ -142,20 +205,21 @@ export class DiaryService {
         content: dto.content,
         weather: dto.weather ?? 'sunny',
         entryDate: dto.entryDate,
-        illustrationUrl: dto.illustrationUrl ?? null,
-        status: dto.status ?? 'published',
-        sortOrder: dto.sortOrder ?? 0,
-        author: dto.author ?? '',
-        sourcePlatform: dto.sourcePlatform ?? null,
-        completionStatus: dto.completionStatus ?? 'completed',
-        contentWarnings: dto.contentWarnings ?? [],
-        characterBackground: dto.characterBackground ?? null,
-        recommendationReason: dto.recommendationReason ?? null,
-      })
-      .returning();
+         illustrationUrl: dto.illustrationUrl ?? null,
+         status: dto.status ?? 'published',
+         sortOrder: dto.sortOrder ?? 0,
+         author: dto.author ?? '',
+         sourcePlatform: dto.sourcePlatform ?? null,
+         sourceUrl: dto.sourceUrl ?? null,
+         completionStatus: dto.completionStatus ?? 'completed',
+         contentWarnings: dto.contentWarnings ?? [],
+         characterBackground: dto.characterBackground ?? null,
+         recommendationReason: dto.recommendationReason ?? null,
+       })
+       .returning();
 
-    this.logger.log(`创建日记: ${rows[0].id}`);
-    return this.toDto(rows[0]);
+     this.logger.log(`创建日记: ${rows[0].id}`);
+    return this.findWithSubmitterById(rows[0].id);
   }
 
   async submit(
@@ -176,24 +240,25 @@ export class DiaryService {
         content: dto.content,
         weather: dto.weather ?? 'sunny',
         entryDate: dto.entryDate,
-        illustrationUrl: dto.illustrationUrl ?? null,
-        status,
-        sortOrder: dto.sortOrder ?? 0,
-        author: dto.author ?? '',
-        sourcePlatform: dto.sourcePlatform ?? null,
-        completionStatus: dto.completionStatus ?? 'completed',
-        contentWarnings: dto.contentWarnings ?? [],
-        characterBackground: dto.characterBackground ?? null,
-        recommendationReason: dto.recommendationReason ?? null,
-        submitterId: dto.submitterId ?? null,
-        submitterName: resolvedSubmitterName,
+         illustrationUrl: dto.illustrationUrl ?? null,
+         status,
+         sortOrder: dto.sortOrder ?? 0,
+         author: dto.author ?? '',
+         sourcePlatform: dto.sourcePlatform ?? null,
+         sourceUrl: dto.sourceUrl ?? null,
+         completionStatus: dto.completionStatus ?? 'completed',
+         contentWarnings: dto.contentWarnings ?? [],
+         characterBackground: dto.characterBackground ?? null,
+         recommendationReason: dto.recommendationReason ?? null,
+         submitterId: dto.submitterId ?? null,
+         submitterName: resolvedSubmitterName,
       })
       .returning();
 
     this.logger.log(
       `用户提交推文: ${rows[0].id}，角色=${dto.userRole || 'unknown'}，状态=${status}`,
     );
-    return this.toDto(rows[0]);
+    return this.findWithSubmitterById(rows[0].id);
   }
 
   async update(id: string, dto: UpdateDiaryDto): Promise<DiaryEntry> {
@@ -207,8 +272,9 @@ export class DiaryService {
     if (dto.status !== undefined) patch.status = dto.status;
     if (dto.sortOrder !== undefined) patch.sortOrder = dto.sortOrder;
     if (dto.author !== undefined) patch.author = dto.author;
-    if (dto.sourcePlatform !== undefined) patch.sourcePlatform = dto.sourcePlatform ?? null;
-    if (dto.completionStatus !== undefined) patch.completionStatus = dto.completionStatus;
+     if (dto.sourcePlatform !== undefined) patch.sourcePlatform = dto.sourcePlatform ?? null;
+     if (dto.sourceUrl !== undefined) patch.sourceUrl = dto.sourceUrl ?? null;
+     if (dto.completionStatus !== undefined) patch.completionStatus = dto.completionStatus;
     if (dto.contentWarnings !== undefined) patch.contentWarnings = dto.contentWarnings;
     if (dto.characterBackground !== undefined) patch.characterBackground = dto.characterBackground ?? null;
     if (dto.recommendationReason !== undefined) patch.recommendationReason = dto.recommendationReason ?? null;
@@ -228,7 +294,7 @@ export class DiaryService {
     }
 
     this.logger.log(`更新日记: ${id}`);
-    return this.toDto(rows[0]);
+    return this.findWithSubmitterById(id);
   }
 
   async updateStatus(id: string, status: 'published' | 'draft' | 'offline'): Promise<DiaryEntry> {
@@ -247,7 +313,7 @@ export class DiaryService {
     }
 
     this.logger.log(`更新日记状态: ${id} -> ${status}`);
-    return this.toDto(rows[0]);
+    return this.findWithSubmitterById(id);
   }
 
   async review(
@@ -270,7 +336,7 @@ export class DiaryService {
     }
 
     this.logger.log(`审核推文: ${id} -> ${status}`);
-    return this.toDto(rows[0]);
+    return this.findWithSubmitterById(id);
   }
 
   async delete(id: string): Promise<void> {

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, User as UserIcon } from 'lucide-react';
+import { Plus, User as UserIcon, ExternalLink } from 'lucide-react';
 import type { CalendarEvent } from '@shared/api.interface';
 import {
   getCalendarList,
@@ -24,6 +24,7 @@ import {
   DialogFooter,
 } from '@client/src/components/ui/dialog';
 import { Image } from '@client/src/components/ui/image';
+import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
 const MONTH_NAMES: string[] = [
   '1月', '2月', '3月', '4月', '5月', '6月',
@@ -59,6 +60,23 @@ const UploaderBadge: React.FC<UploaderBadgeProps> = ({ name, avatarUrl }) => {
       <span className="truncate max-w-[100px]">{name}</span>
     </div>
   );
+};
+
+const getSourcePlatformLabel = (url: string): string => {
+  const hostname = url.toLowerCase();
+  if (hostname.includes('weibo.com') || hostname.includes('m.weibo.cn') || hostname.includes('weibo.cn')) {
+    return '微博原文 ↗';
+  }
+  if (hostname.includes('lofter.com')) {
+    return 'Lofter 原文 ↗';
+  }
+  if (hostname.includes('ao3.org')) {
+    return 'AO3 原文 ↗';
+  }
+  if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+    return 'X 原文 ↗';
+  }
+  return '查看原文 ↗';
 };
 
 interface MonthGridProps {
@@ -114,8 +132,21 @@ const MonthGrid: React.FC<MonthGridProps> = ({ year, month, events }) => {
               {dayEvents.length > 0 && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-40 bg-ink/90 text-paper text-xs rounded-md px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 whitespace-normal text-left">
                   {dayEvents.map((e: CalendarEvent) => (
-                    <div key={e.id} className="py-0.5 space-y-0.5">
-                      <div>{e.hasCrown && '👑 '}{e.title}</div>
+                     <div key={e.id} className="py-0.5 space-y-0.5">
+                       <div className="flex items-center gap-1">
+                         <span>{e.hasCrown && '👑 '}{e.title}</span>
+                         {e.sourceUrl && (
+                           <UniversalLink
+                             to={e.sourceUrl}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-shiba/70 hover:text-shiba pointer-events-auto"
+                             onClick={(ev) => ev.stopPropagation()}
+                           >
+                             <ExternalLink size={12} />
+                           </UniversalLink>
+                         )}
+                       </div>
                       {e.uploaderName && (
                         <div className="flex items-center gap-1 opacity-70">
                           {e.uploaderAvatarUrl ? (
@@ -154,6 +185,7 @@ const AddEventDialog: React.FC<AddEventDialogProps> = ({ open, onOpenChange, onS
   const [description, setDescription] = useState('');
   const [hasCrown, setHasCrown] = useState(false);
   const [eventType, setEventType] = useState('fan_event');
+  const [sourceUrl, setSourceUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = (): void => {
@@ -162,6 +194,7 @@ const AddEventDialog: React.FC<AddEventDialogProps> = ({ open, onOpenChange, onS
     setDescription('');
     setHasCrown(false);
     setEventType('fan_event');
+    setSourceUrl('');
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -178,6 +211,7 @@ const AddEventDialog: React.FC<AddEventDialogProps> = ({ open, onOpenChange, onS
         description: description.trim() || undefined,
         hasCrown,
         eventType: eventType.trim() || 'fan_event',
+        sourceUrl: sourceUrl.trim() || undefined,
       });
       toast.success('事件添加成功！🎉');
       resetForm();
@@ -223,22 +257,38 @@ const AddEventDialog: React.FC<AddEventDialogProps> = ({ open, onOpenChange, onS
               className="bg-cream/50 border-cocoa/20 rounded-xl text-cocoa"
             />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="event-desc" className="text-cocoa font-handwriting text-lg">
-              事件描述
-            </Label>
-            <Textarea
-              id="event-desc"
-              value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
-              placeholder="简单描述一下这个事件吧~"
-              className="bg-cream/50 border-cocoa/20 rounded-xl text-cocoa placeholder:text-cocoa/40 min-h-[80px]"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="event-type" className="text-cocoa font-handwriting text-lg">
-              事件类型
-            </Label>
+           <div className="space-y-1.5">
+             <Label htmlFor="event-desc" className="text-cocoa font-handwriting text-lg">
+               事件描述
+             </Label>
+             <Textarea
+               id="event-desc"
+               value={description}
+               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+               placeholder="简单描述一下这个事件吧~"
+               className="bg-cream/50 border-cocoa/20 rounded-xl text-cocoa placeholder:text-cocoa/40 min-h-[80px]"
+             />
+           </div>
+           <div className="space-y-1.5">
+             <Label htmlFor="event-source-url" className="text-cocoa font-handwriting text-lg">
+               原文链接
+             </Label>
+             <Input
+               id="event-source-url"
+               type="url"
+               value={sourceUrl}
+               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSourceUrl(e.target.value)}
+               placeholder="https://..."
+               className="bg-cream/50 border-cocoa/20 rounded-xl text-cocoa placeholder:text-cocoa/40"
+             />
+             <p className="text-xs text-cocoa/50">
+               可填写该事件对应的微博原文地址
+             </p>
+           </div>
+           <div className="space-y-1.5">
+             <Label htmlFor="event-type" className="text-cocoa font-handwriting text-lg">
+               事件类型
+             </Label>
             <Input
               id="event-type"
               value={eventType}
@@ -425,18 +475,38 @@ const CalendarPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-handwriting text-xl text-ink flex items-center gap-2">
-                            {ev.hasCrown && <span>👑</span>}
-                            {ev.title}
-                          </h3>
-                          {ev.description && (
-                            <p className="text-sm text-cocoa/70 mt-1">{ev.description}</p>
-                          )}
-                          <div className="mt-2">
-                            <UploaderBadge
-                              name={ev.uploaderName}
-                              avatarUrl={ev.uploaderAvatarUrl}
-                            />
-                          </div>
+                             {ev.hasCrown && <span>👑</span>}
+                             {ev.title}
+                             {ev.sourceUrl && (
+                               <UniversalLink
+                                 to={ev.sourceUrl}
+                                 target="_blank"
+                                 rel="noopener noreferrer"
+                                 className="text-shiba/70 hover:text-shiba"
+                               >
+                                 <ExternalLink size={14} />
+                               </UniversalLink>
+                             )}
+                           </h3>
+                           {ev.description && (
+                             <p className="text-sm text-cocoa/70 mt-1">{ev.description}</p>
+                           )}
+                           {ev.sourceUrl && (
+                             <UniversalLink
+                               to={ev.sourceUrl}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="inline-block mt-2 px-3 py-1 bg-cream border border-shiba/40 text-shiba font-handwriting text-sm rounded-full hover:bg-shiba hover:text-white transition-colors shadow-sm"
+                             >
+                               {getSourcePlatformLabel(ev.sourceUrl)}
+                             </UniversalLink>
+                           )}
+                           <div className="mt-2">
+                             <UploaderBadge
+                               name={ev.uploaderName}
+                               avatarUrl={ev.uploaderAvatarUrl}
+                             />
+                           </div>
                         </div>
                         {ev.hasCrown && (
                           <div className="absolute -top-1 -right-1 text-2xl rotate-12">👑</div>

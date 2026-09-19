@@ -230,6 +230,7 @@ export const calendarEvents = pgTable('calendar_events', {
   uploaderId: uuid('uploader_id'),
   uploaderName: varchar('uploader_name', { length: 100 }),
   uploaderAvatarUrl: text('uploader_avatar_url'),
+  sourceUrl: text('source_url'),
   createdAt: customTimestamptz('_created_at', { precision: 3 })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -262,6 +263,7 @@ export const diaryEntries = pgTable('diary_entries', {
   reviewedAt: customTimestamptz('reviewed_at', { precision: 3 }),
   submitterId: uuid('submitter_id'),
   submitterName: varchar('submitter_name', { length: 100 }),
+  sourceUrl: text('source_url'),
   createdAt: customTimestamptz('_created_at', { precision: 3 })
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

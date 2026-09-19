@@ -74,6 +74,7 @@ const DiaryManagePage: React.FC = () => {
     contentWarnings: string[];
     characterBackground: string;
     recommendationReason: string;
+    sourceUrl: string;
     status: DiaryEntry['status'];
     sortOrder: number;
   }>({
@@ -86,6 +87,7 @@ const DiaryManagePage: React.FC = () => {
     contentWarnings: [],
     characterBackground: '',
     recommendationReason: '',
+    sourceUrl: '',
     status: 'published',
     sortOrder: 0,
   });
@@ -143,6 +145,7 @@ const DiaryManagePage: React.FC = () => {
       contentWarnings: entry.contentWarnings || [],
       characterBackground: entry.characterBackground || '',
       recommendationReason: entry.recommendationReason || '',
+      sourceUrl: entry.sourceUrl || '',
       status: entry.status,
       sortOrder: entry.sortOrder,
     });
@@ -445,20 +448,33 @@ const DiaryManagePage: React.FC = () => {
                   className="mt-1"
                 />
               </div>
-              <div>
-                <Label className="text-cocoa/60 text-xs">平台</Label>
-                <Input
-                  value={editForm.sourcePlatform}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, sourcePlatform: e.target.value })
-                  }
-                  className="mt-1"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-cocoa/60 text-xs">状态</Label>
+               <div>
+                 <Label className="text-cocoa/60 text-xs">平台</Label>
+                 <Input
+                   value={editForm.sourcePlatform}
+                   onChange={(e) =>
+                     setEditForm({ ...editForm, sourcePlatform: e.target.value })
+                   }
+                   className="mt-1"
+                 />
+               </div>
+             </div>
+             <div>
+               <Label className="text-cocoa/60 text-xs">原文链接</Label>
+               <Input
+                 type="url"
+                 value={editForm.sourceUrl}
+                 onChange={(e) =>
+                   setEditForm({ ...editForm, sourceUrl: e.target.value })
+                 }
+                 placeholder="https://..."
+                 className="mt-1"
+               />
+               <p className="text-xs text-cocoa/50 mt-1">可填写微博/Lofter 等原文地址</p>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label className="text-cocoa/60 text-xs">状态</Label>
                 <Select
                   value={editForm.status}
                   onValueChange={(v) =>

@@ -4,11 +4,33 @@ import type { DiaryEntry } from '@shared/api.interface';
 import { getDiaryDetail } from '@client/src/api/diary';
 import LoadingSpinner from '@client/src/components/LoadingSpinner';
 import ErrorState from '@client/src/components/ErrorState';
+import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
 const formatFullDate = (dateStr: string): string => {
   const d = new Date(dateStr);
   const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${weekdays[d.getDay()]}`;
+};
+
+const getSourcePlatformLabel = (url: string): string => {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname.includes('weibo.com') || hostname.includes('weibo.cn') || hostname.includes('m.weibo.cn')) {
+      return '微博原文 ↗';
+    }
+    if (hostname.includes('lofter.com')) {
+      return 'Lofter 原文 ↗';
+    }
+    if (hostname.includes('ao3.org')) {
+      return 'AO3 原文 ↗';
+    }
+    if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
+      return 'X 原文 ↗';
+    }
+  } catch {
+    // invalid url, fall through to default
+  }
+  return '查看原文 ↗';
 };
 
 const DiaryDetailPage: React.FC = () => {
@@ -96,16 +118,29 @@ const DiaryDetailPage: React.FC = () => {
                </div>
              )}
 
-             {entry.recommendationReason && (
-               <div className="bg-mint/30 rounded-lg p-5 mb-6 -rotate-0.5">
-                 <h3 className="font-handwriting text-xl text-ink mb-2">💡 推荐理由</h3>
-                 <p className="text-cocoa/80 leading-relaxed text-sm whitespace-pre-wrap">
-                   {entry.recommendationReason}
-                 </p>
-               </div>
-             )}
+              {entry.recommendationReason && (
+                <div className="bg-mint/30 rounded-lg p-5 mb-6 -rotate-0.5">
+                  <h3 className="font-handwriting text-xl text-ink mb-2">💡 推荐理由</h3>
+                  <p className="text-cocoa/80 leading-relaxed text-sm whitespace-pre-wrap">
+                    {entry.recommendationReason}
+                  </p>
+                </div>
+              )}
 
-               <div className="font-handwriting text-base md:text-lg leading-relaxed md:leading-loose text-cocoa whitespace-pre-wrap">
+              {entry.sourceUrl && (
+                <div className="flex justify-center mb-6">
+                  <UniversalLink
+                    to={entry.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#FFF3D6] text-[#F4A261] border-2 border-[#F4A261]/40 rounded-full font-handwriting text-lg shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                  >
+                    {getSourcePlatformLabel(entry.sourceUrl)}
+                  </UniversalLink>
+                </div>
+              )}
+
+                <div className="font-handwriting text-base md:text-lg leading-relaxed md:leading-loose text-cocoa whitespace-pre-wrap">
                 {entry.content}
               </div>
 

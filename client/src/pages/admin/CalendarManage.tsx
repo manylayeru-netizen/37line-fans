@@ -55,6 +55,7 @@ const CalendarManage: React.FC<CalendarManageProps> = () => {
     description: '',
     eventType: 'other',
     hasCrown: false,
+    sourceUrl: '',
   });
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -88,6 +89,7 @@ const CalendarManage: React.FC<CalendarManageProps> = () => {
       description: '',
       eventType: 'other',
       hasCrown: false,
+      sourceUrl: '',
     });
     setDialogOpen(true);
   };
@@ -100,6 +102,7 @@ const CalendarManage: React.FC<CalendarManageProps> = () => {
       description: event.description || '',
       eventType: event.eventType,
       hasCrown: event.hasCrown,
+      sourceUrl: event.sourceUrl || '',
     });
     setDialogOpen(true);
   };
@@ -361,22 +364,40 @@ const CalendarManage: React.FC<CalendarManageProps> = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-cocoa mb-1.5">
-                描述
-              </label>
-              <Textarea
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-                placeholder="补充说明..."
-                rows={3}
-                className="bg-cream/50 resize-none"
-              />
-            </div>
+             <div>
+               <label className="block text-sm font-medium text-cocoa mb-1.5">
+                 描述
+               </label>
+               <Textarea
+                 value={form.description}
+                 onChange={(e) =>
+                   setForm((f) => ({ ...f, description: e.target.value }))
+                 }
+                 placeholder="补充说明..."
+                 rows={3}
+                 className="bg-cream/50 resize-none"
+               />
+             </div>
 
-            <div className="flex items-center justify-between bg-cream/50 rounded-lg p-3">
+             <div>
+               <label className="block text-sm font-medium text-cocoa mb-1.5">
+                 原文链接
+               </label>
+               <Input
+                 type="url"
+                 value={form.sourceUrl}
+                 onChange={(e) =>
+                   setForm((f) => ({ ...f, sourceUrl: e.target.value }))
+                 }
+                 placeholder="https://..."
+                 className="bg-cream/50"
+               />
+               <p className="text-xs text-cocoa/50 mt-1">
+                 可填写该事件对应的微博原文地址
+               </p>
+             </div>
+
+             <div className="flex items-center justify-between bg-cream/50 rounded-lg p-3">
               <div>
                 <p className="text-sm font-medium text-cocoa">皇冠标记 👑</p>
                 <p className="text-xs text-cocoa/60">

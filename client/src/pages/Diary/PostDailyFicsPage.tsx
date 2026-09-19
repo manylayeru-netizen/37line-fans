@@ -21,6 +21,7 @@ const PostDailyFicsPage: React.FC = () => {
     contentWarnings: [] as string[],
     characterBackground: '',
     recommendationReason: '',
+    sourceUrl: '',
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -123,6 +124,18 @@ const PostDailyFicsPage: React.FC = () => {
                 className="w-full px-4 py-2 rounded-lg border-2 border-cocoa/10 bg-cream/30 focus:border-shiba focus:outline-none text-cocoa"
               />
             </div>
+           </div>
+
+          <div>
+            <label className="font-handwriting text-lg text-cocoa mb-2 block">原文链接</label>
+            <input
+              type="url"
+              value={formData.sourceUrl}
+              onChange={(e) => setFormData({ ...formData, sourceUrl: e.target.value })}
+              placeholder="https://..."
+              className="w-full px-4 py-2 rounded-lg border-2 border-cocoa/10 bg-cream/30 focus:border-shiba focus:outline-none text-cocoa"
+            />
+            <p className="text-xs text-cocoa/50 mt-1">可填写微博/Lofter 等原文地址</p>
           </div>
 
           <div>

@@ -14,9 +14,12 @@ import { Cloud, Sun, Star, WashiTape, PolaroidFrame } from '@client/src/componen
 import { getDiaryLatest } from '@client/src/api/diary';
 import { getCollectionFeatured } from '@client/src/api/collection';
 import { getGuestbookNotes } from '@client/src/api/guestbook';
+import { getOnThisDay } from '@client/src/api/home';
 import type { DiaryEntry } from '@shared/api.interface';
 import type { CollectionCard } from '@shared/api.interface';
 import type { GuestbookNote } from '@shared/api.interface';
+import type { OnThisDayResponse } from '@shared/api.interface';
+import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
 interface EntryCardData {
   title: string;
@@ -69,23 +72,26 @@ const HomePage: React.FC = () => {
   const [latestDiaries, setLatestDiaries] = useState<DiaryEntry[]>([]);
   const [collectionHighlights, setCollectionHighlights] = useState<CollectionCard[]>([]);
   const [guestbookNotes, setGuestbookNotes] = useState<GuestbookNote[]>([]);
+  const [onThisDay, setOnThisDay] = useState<OnThisDayResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadHomeData(): Promise<void> {
       try {
-        const [diaries, featured, notes] = await Promise.all([
+        const [diaries, featured, notes, onThisDayData] = await Promise.all([
           getDiaryLatest().catch(() => [] as DiaryEntry[]),
           getCollectionFeatured().catch(() => [] as CollectionCard[]),
           getGuestbookNotes({ page: 1, pageSize: 6 })
             .then((res) => res.items)
             .catch(() => [] as GuestbookNote[]),
+          getOnThisDay().catch(() => ({ hasContent: false, month: 0, day: 0, events: [], photos: [], diaryEntries: [] } as OnThisDayResponse)),
         ]);
         if (cancelled) return;
         setLatestDiaries(Array.isArray(diaries) ? diaries.slice(0, 3) : []);
         setCollectionHighlights(Array.isArray(featured) ? featured.slice(0, 4) : []);
         setGuestbookNotes(Array.isArray(notes) ? notes : []);
+        setOnThisDay(onThisDayData);
       } catch {
         if (cancelled) return;
         setLatestDiaries([]);
@@ -184,6 +190,150 @@ const HomePage: React.FC = () => {
       </section>
 
       <div id="home-content" />
+
+      {/* ========== 那年今日 ========== */}
+      {onThisDay?.hasContent && (
+        <section className="mt-12 md:mt-16">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <Calendar size={20} className="text-shiba sm:size-6" />
+            <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">
+              📅 那年今日 · {onThisDay.month}月{onThisDay.day}日
+            </h2>
+            <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
+          </div>
+
+          <div className="bg-cream/60 rounded-2xl p-5 sm:p-6 md:p-8 border-2 border-dashed border-grid/60 relative shadow-sm">
+            {/* 装饰贴纸 */}
+            <div className="absolute -top-3 -left-2">
+              <Star size={24} color="#F4A261" />
+            </div>
+            <div className="absolute -top-2 right-8">
+              <Heart size={18} fill="#F8C8DC" color="#F4A261" strokeWidth={1.5} />
+            </div>
+
+            {/* 日历事件 */}
+            {onThisDay.events.length > 0 && (
+              <div className="mb-6 last:mb-0">
+                <h3 className="font-handwriting text-lg text-shiba mb-3 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-shiba" />
+                  重要日子
+                </h3>
+                <div className="space-y-2">
+                  {onThisDay.events.map((event) => {
+                    const year = event.eventDate ? event.eventDate.split('-')[0] : '';
+                    return (
+                      <motion.div
+                        key={event.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        className="bg-paper rounded-lg p-3 sm:p-4 shadow-sm flex items-start gap-3 hover:shadow transition-shadow"
+                      >
+                        <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-shiba/10 flex flex-col items-center justify-center">
+                          <span className="font-handwriting text-lg text-shiba leading-none">{year}</span>
+                          <span className="text-[10px] text-cocoa/50 mt-0.5">年</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-handwriting text-base text-ink truncate">{event.title}</div>
+                          {event.description && (
+                            <p className="text-cocoa/70 text-sm line-clamp-2 mt-1">{event.description}</p>
+                          )}
+                        </div>
+                        {event.sourceUrl && (
+                          <UniversalLink
+                            to={event.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 text-penguin hover:text-penguin/80 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <BookOpen size={16} />
+                          </UniversalLink>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 照片 */}
+            {onThisDay.photos.length > 0 && (
+              <div className="mb-6 last:mb-0">
+                <h3 className="font-handwriting text-lg text-shiba mb-3 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-tape-pink" />
+                  回忆照片
+                </h3>
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-thin">
+                  {onThisDay.photos.map((photo, idx: number) => (
+                    <motion.div
+                      key={photo.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: idx * 0.05 }}
+                      className="flex-shrink-0 cursor-pointer"
+                      onClick={() => navigate('/collection')}
+                    >
+                      <PolaroidFrame title={photo.title} rotation={idx % 2 === 0 ? -3 : 3}>
+                        <div
+                          className="w-20 h-24 sm:w-24 sm:h-28 bg-gradient-to-br from-cream to-mint/30"
+                          style={{
+                            backgroundImage: `url(${photo.imageUrl})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        />
+                      </PolaroidFrame>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 推文 */}
+            {onThisDay.diaryEntries.length > 0 && (
+              <div className="last:mb-0">
+                <h3 className="font-handwriting text-lg text-shiba mb-3 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-mint" />
+                  当日推文
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {onThisDay.diaryEntries.map((entry, idx: number) => {
+                    const year = entry.entryDate ? entry.entryDate.split('-')[0] : '';
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.3, delay: idx * 0.05 }}
+                        onClick={() => navigate(`/dailyfics/${entry.id}`)}
+                        className="bg-paper rounded-lg p-3 sm:p-4 shadow-sm cursor-pointer hover:shadow transition-shadow card-wobble relative"
+                      >
+                        <div className="flex items-center gap-2 mb-1.5 text-xs text-cocoa/50">
+                          <span className="font-mono">{year}年</span>
+                          <span>·</span>
+                          <span>{entry.weather}</span>
+                        </div>
+                        <h4 className="font-handwriting text-base text-ink line-clamp-1">{entry.title}</h4>
+                        <WashiTape
+                          color={idx % 2 === 0 ? 'pink' : 'mint'}
+                          pattern="dots"
+                          rotation={idx % 2 === 0 ? -3 : 3}
+                          width={40}
+                          className="-top-1.5 right-3"
+                          style={{ height: 14 }}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ========== 四个入口卡片区 ========== */}
       <section className="mt-12 md:mt-16">
