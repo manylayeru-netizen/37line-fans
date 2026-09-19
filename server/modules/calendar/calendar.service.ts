@@ -69,7 +69,15 @@ export class CalendarService {
   private async findWithUploaderById(id: string): Promise<CalendarEvent> {
     const rows = await this.db
       .select({
-        event: calendarEvents,
+        id: calendarEvents.id,
+        title: calendarEvents.title,
+        eventDate: calendarEvents.eventDate,
+        description: calendarEvents.description,
+        hasCrown: calendarEvents.hasCrown,
+        eventType: calendarEvents.eventType,
+        uploaderId: calendarEvents.uploaderId,
+        sourceUrl: calendarEvents.sourceUrl,
+        createdAt: calendarEvents.createdAt,
         uploader_username: siteUsers.username,
         uploader_display_name: siteUsers.displayName,
         uploader_avatar_url: siteUsers.avatarUrl,
@@ -83,10 +91,23 @@ export class CalendarService {
     }
 
     const row = rows[0];
-    const uploader = row.uploader_username != null
-      ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
-      : null;
-    return this.toDto(row.event, uploader);
+    const resolvedName: string | undefined = row.uploader_username != null
+      ? (row.uploader_display_name ?? row.uploader_username ?? undefined)
+      : undefined;
+    const resolvedAvatar: string | undefined = row.uploader_avatar_url ?? undefined;
+
+    return {
+      id: row.id,
+      title: row.title,
+      eventDate: row.eventDate,
+      description: row.description ?? undefined,
+      hasCrown: row.hasCrown ?? false,
+      eventType: row.eventType ?? 'anniversary',
+      uploaderId: row.uploaderId ?? undefined,
+      uploaderName: resolvedName,
+      uploaderAvatarUrl: resolvedAvatar,
+      sourceUrl: row.sourceUrl ?? undefined,
+    };
   }
 
   private mapJoinedRow(row: CalendarWithUploader): CalendarEvent {

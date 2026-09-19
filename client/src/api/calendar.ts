@@ -38,6 +38,11 @@ export async function updateCalendarEvent(
   return res.data;
 }
 
+export async function getCalendarEventById(id: string): Promise<CalendarEvent> {
+  const res = await apiGet<{ data: CalendarEvent }>(`/api/calendar/${id}`);
+  return res.data;
+}
+
 export async function deleteCalendarEvent(id: string): Promise<void> {
   await apiDelete(`/api/calendar/${id}`);
 }

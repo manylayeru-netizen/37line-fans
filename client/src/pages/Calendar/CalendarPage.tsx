@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Plus, User as UserIcon, ExternalLink } from 'lucide-react';
+import { Plus, User as UserIcon, ExternalLink, X, Crown } from 'lucide-react';
 import type { CalendarEvent } from '@shared/api.interface';
 import {
   getCalendarList,
   createCalendarEvent,
+  getCalendarEventById,
 } from '@client/src/api/calendar';
 import { useAuthStore } from '@client/src/store/auth.store';
 import PageHeader from '@client/src/components/PageHeader';
@@ -22,7 +23,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@client/src/components/ui/dialog';
+import { Badge } from '@client/src/components/ui/badge';
 import { Image } from '@client/src/components/ui/image';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
@@ -83,9 +86,10 @@ interface MonthGridProps {
   year: number;
   month: number;
   events: CalendarEvent[];
+  onDayClick?: (day: number, dayEvents: CalendarEvent[]) => void;
 }
 
-const MonthGrid: React.FC<MonthGridProps> = ({ year, month, events }) => {
+const MonthGrid: React.FC<MonthGridProps> = ({ year, month, events, onDayClick }) => {
   const daysInMonth: number = getDaysInMonth(year, month);
   const firstDay: number = getFirstDayOfMonth(year, month);
   const cells: (number | null)[] = [];
@@ -119,8 +123,17 @@ const MonthGrid: React.FC<MonthGridProps> = ({ year, month, events }) => {
           return (
             <div
               key={day}
-              className="relative aspect-square flex items-center justify-center text-cocoa/80 text-sm rounded-md group hover:bg-shiba/10 transition"
+              className={`relative aspect-square flex items-center justify-center text-cocoa/80 text-sm rounded-md group transition ${
+                dayEvents.length > 0
+                  ? 'cursor-pointer hover:bg-shiba/15 hover:shadow-sm'
+                  : 'hover:bg-shiba/5'
+              }`}
               title={dayEvents.map((e: CalendarEvent) => e.title).join('、')}
+              onClick={() => {
+                if (dayEvents.length > 0 && onDayClick) {
+                  onDayClick(day, dayEvents);
+                }
+              }}
             >
               {day}
               {hasCrown && (
@@ -331,6 +344,162 @@ const AddEventDialog: React.FC<AddEventDialogProps> = ({ open, onOpenChange, onS
   );
 };
 
+const WEEKDAY_NAMES: string[] = [
+  '星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六',
+];
+
+const formatEventDate = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const w = WEEKDAY_NAMES[d.getDay()];
+  return `${y}年${m}月${day}日 ${w}`;
+};
+
+const getEventTypeLabel = (type: string): string => {
+  const map: Record<string, string> = {
+    anniversary: '纪念日',
+    birthday: '生日',
+    fan_event: '粉丝活动',
+    daily: '日常',
+    concert: '演唱会',
+    variety: '综艺',
+    drama: '剧集',
+    release: '作品发布',
+    other: '其他',
+  };
+  return map[type] || type;
+};
+
+const getEventTypeColor = (type: string): string => {
+  const map: Record<string, string> = {
+    anniversary: 'bg-tape-pink/50 text-ink border-tape-pink',
+    birthday: 'bg-shiba/20 text-ink border-shiba/40',
+    fan_event: 'bg-mint/40 text-ink border-mint',
+    daily: 'bg-tape-blue/50 text-ink border-tape-blue',
+    concert: 'bg-shiba/20 text-ink border-shiba/40',
+    variety: 'bg-tape-pink/50 text-ink border-tape-pink',
+    drama: 'bg-tape-blue/50 text-ink border-tape-blue',
+    release: 'bg-mint/40 text-ink border-mint',
+    other: 'bg-cream text-cocoa border-cocoa/20',
+  };
+  return map[type] || 'bg-cream text-cocoa border-cocoa/20';
+};
+
+interface EventDetailDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  events: CalendarEvent[];
+  title: string;
+}
+
+const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
+  open,
+  onOpenChange,
+  events,
+  title,
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-paper border-cocoa/20 rounded-2xl sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden">
+        {/* 顶部胶带装饰 */}
+        <div className="relative h-8 bg-gradient-to-r from-tape-pink/60 via-tape-blue/40 to-tape-pink/60 flex items-center justify-center flex-shrink-0">
+          <div className="absolute top-0 left-1/4 w-12 h-6 bg-tape-pink/70 -rotate-12 rounded-sm" />
+          <div className="absolute top-0 right-1/4 w-12 h-6 bg-tape-blue/60 rotate-12 rounded-sm" />
+        </div>
+
+        <DialogHeader className="px-6 pt-5 pb-2 flex-shrink-0">
+          <DialogTitle className="font-handwriting text-2xl text-ink text-center">
+            {title}
+          </DialogTitle>
+          <DialogDescription className="sr-only">日历事件详情</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-4">
+          {events.map((ev: CalendarEvent, idx: number) => (
+            <div
+              key={ev.id}
+              className="bg-cream/60 rounded-xl p-5 border border-cocoa/10 relative shadow-sm"
+            >
+              {/* 角落贴纸 */}
+              {ev.hasCrown && (
+                <div className="absolute -top-3 -right-2 text-2xl rotate-12 drop-shadow-sm">
+                  <Crown className="w-6 h-6 text-shiba fill-shiba" />
+                </div>
+              )}
+
+              {/* 事件类型标签 */}
+              <Badge
+                className={`${getEventTypeColor(ev.eventType)} font-handwriting text-sm px-3 py-0.5 rounded-full mb-3`}
+              >
+                {getEventTypeLabel(ev.eventType)}
+              </Badge>
+
+              {/* 标题 */}
+              <h3 className="font-handwriting text-2xl text-ink leading-tight flex items-center gap-2">
+                {ev.hasCrown && <span className="text-xl">👑</span>}
+                {ev.title}
+              </h3>
+
+              {/* 日期 */}
+              <p className="text-cocoa/70 font-serif text-sm mt-2 flex items-center gap-1.5">
+                <span>📅</span>
+                {formatEventDate(ev.eventDate)}
+              </p>
+
+              {/* 描述 */}
+              {ev.description && (
+                <div className="mt-4 pt-4 border-t border-cocoa/10">
+                  <p className="text-cocoa/80 text-sm leading-relaxed whitespace-pre-wrap">
+                    {ev.description}
+                  </p>
+                </div>
+              )}
+
+              {/* 底部：上传者 + 原文链接 */}
+              <div className="mt-4 pt-4 border-t border-cocoa/10 flex items-center justify-between gap-3 flex-wrap">
+                <UploaderBadge
+                  name={ev.uploaderName}
+                  avatarUrl={ev.uploaderAvatarUrl}
+                />
+                {ev.sourceUrl && (
+                  <UniversalLink
+                    to={ev.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-shiba/10 border border-shiba/30 text-shiba font-handwriting text-sm rounded-full hover:bg-shiba hover:text-white transition-colors shadow-sm"
+                  >
+                    <ExternalLink size={14} />
+                    {getSourcePlatformLabel(ev.sourceUrl)}
+                  </UniversalLink>
+                )}
+              </div>
+
+              {/* 分隔线（非最后一条） */}
+              {idx < events.length - 1 && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-cocoa/20 text-lg">
+                  ✦ ✦ ✦
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <DialogFooter className="px-6 pb-5 pt-2 flex-shrink-0 flex justify-center">
+          <button
+            onClick={() => onOpenChange(false)}
+            className="font-handwriting text-cocoa/60 hover:text-shiba text-lg transition-colors flex items-center gap-1"
+          >
+            <X size={18} />
+            返回日历
+          </button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const CalendarPage: React.FC = () => {
   const currentYear: number = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
@@ -338,6 +507,9 @@ const CalendarPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailEvents, setDetailEvents] = useState<CalendarEvent[]>([]);
+  const [detailTitle, setDetailTitle] = useState('');
 
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
@@ -385,6 +557,32 @@ const CalendarPage: React.FC = () => {
 
   const handleRefresh = (): void => {
     fetchEvents();
+  };
+
+  const handleDayClick = (month: number, day: number, dayEvents: CalendarEvent[]): void => {
+    setDetailEvents(dayEvents);
+    setDetailTitle(`${year}年${month + 1}月${day}日 · 当日事件`);
+    setDetailOpen(true);
+  };
+
+  const handleEventClick = async (ev: CalendarEvent): Promise<void> => {
+    // 如果列表里已经有完整数据，直接用
+    const existing = events.find((e: CalendarEvent) => e.id === ev.id);
+    if (existing && existing.description !== undefined) {
+      setDetailEvents([existing]);
+      setDetailTitle(formatEventDate(existing.eventDate));
+      setDetailOpen(true);
+      return;
+    }
+    // 否则单独请求详情（数据不完整时的兜底）
+    try {
+      const full: CalendarEvent = await getCalendarEventById(ev.id);
+      setDetailEvents([full]);
+      setDetailTitle(formatEventDate(full.eventDate));
+      setDetailOpen(true);
+    } catch (err) {
+      toast.error((err as Error).message || '加载详情失败');
+    }
   };
 
   return (
@@ -444,7 +642,15 @@ const CalendarPage: React.FC = () => {
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {Array.from({ length: 12 }, (_, m: number) => (
-                <MonthGrid key={m} year={year} month={m} events={events} />
+                <MonthGrid
+                  key={m}
+                  year={year}
+                  month={m}
+                  events={events}
+                  onDayClick={(day: number, dayEvents: CalendarEvent[]) =>
+                    handleDayClick(m, day, dayEvents)
+                  }
+                />
               ))}
             </div>
 
@@ -463,7 +669,8 @@ const CalendarPage: React.FC = () => {
                     return (
                       <div
                         key={ev.id}
-                        className="bg-paper rounded-xl shadow-sm p-5 flex items-start gap-4 card-wobble relative overflow-hidden"
+                        className="bg-paper rounded-xl shadow-sm p-5 flex items-start gap-4 card-wobble relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => handleEventClick(ev)}
                       >
                         <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-shiba/10 flex flex-col items-center justify-center">
                           <span className="font-handwriting text-xs text-cocoa/70">
@@ -524,6 +731,13 @@ const CalendarPage: React.FC = () => {
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           onSuccess={handleRefresh}
+        />
+
+        <EventDetailDialog
+          open={detailOpen}
+          onOpenChange={setDetailOpen}
+          events={detailEvents}
+          title={detailTitle}
         />
       </div>
     </div>

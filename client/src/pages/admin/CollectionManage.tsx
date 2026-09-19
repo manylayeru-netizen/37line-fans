@@ -153,22 +153,47 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
       return;
     }
     if (!form.imageUrl.trim()) {
-      toast.error('请填写图片 URL');
+      toast.error('请上传或填写图片 URL');
       return;
     }
+
+    const payload = {
+      title: form.title.trim(),
+      description: form.description.trim() || undefined,
+      imageUrl: form.imageUrl.trim(),
+      category: form.category.trim() || undefined,
+      sortOrder: parseInt(String(form.sortOrder), 10) || 0,
+      rotationDegree: parseInt(String(form.rotationDegree), 10) || 0,
+    };
+
     try {
       if (editingCard) {
-        await collectionApi.updateCollectionCard(editingCard.id, form);
+        await collectionApi.updateCollectionCard(editingCard.id, payload);
         toast.success('卡片已更新 ✨');
       } else {
-        await collectionApi.createCollectionCard(form);
+        await collectionApi.createCollectionCard(payload);
         toast.success('卡片已创建 🎉');
       }
       setDialogOpen(false);
       fetchList();
       fetchCategories();
-    } catch {
-      toast.error('保存失败');
+    } catch (err: unknown) {
+      let msg = '保存失败，请重试';
+      if (err && typeof err === 'object') {
+        const e = err as {
+          response?: { data?: { error?: { message?: string }; message?: string } };
+          message?: string;
+        };
+        const errData = e.response?.data;
+        if (errData?.error?.message) {
+          msg = `保存失败：${errData.error.message}`;
+        } else if (errData?.message) {
+          msg = `保存失败：${errData.message}`;
+        } else if (e.message) {
+          msg = `保存失败：${e.message}`;
+        }
+      }
+      toast.error(msg);
     }
   };
 
@@ -179,8 +204,23 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
       toast.success('已删除');
       setDeleteId(null);
       fetchList();
-    } catch {
-      toast.error('删除失败');
+    } catch (err: unknown) {
+      let msg = '删除失败，请重试';
+      if (err && typeof err === 'object') {
+        const e = err as {
+          response?: { data?: { error?: { message?: string }; message?: string } };
+          message?: string;
+        };
+        const errData = e.response?.data;
+        if (errData?.error?.message) {
+          msg = `删除失败：${errData.error.message}`;
+        } else if (errData?.message) {
+          msg = `删除失败：${errData.message}`;
+        } else if (e.message) {
+          msg = `删除失败：${e.message}`;
+        }
+      }
+      toast.error(msg);
     }
   };
 
