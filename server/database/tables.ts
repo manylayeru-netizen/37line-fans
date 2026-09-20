@@ -30,7 +30,7 @@ export const uuid = customType<{ data: string; driverData: string; config: { len
 
 export const customTimestamp = customType<{
   data: Date;
-  driverData: Date;
+  driverData: Date | string | null;
   config: { precision?: number };
 }>({
   dataType(config) {
@@ -39,13 +39,15 @@ export const customTimestamp = customType<{
       : '';
     return `datetime${precision}`;
   },
-  toDriver(value: Date | string | number) {
+  toDriver(value: Date | string | number | null | undefined) {
     if (value == null) return value as any;
     if (value instanceof Date) return value;
     return new Date(value);
   },
-  fromDriver(value: Date): Date {
-    return value;
+  fromDriver(value: Date | string | null): Date | null {
+    if (value == null) return null;
+    if (value instanceof Date) return value;
+    return new Date(value);
   },
 });
 
@@ -306,6 +308,25 @@ export const diaryEntries = mysqlTable('diary_entries', {
   index('de_status_idx').on(table.status),
   index('de_completion_idx').on(table.completionStatus),
   index('de_submitter_idx').on(table.submitterId),
+]);
+
+// === 邮箱验证码 ===
+
+export const emailVerificationCodes = mysqlTable('email_verification_codes', {
+  id: uuid('id').primaryKey().$defaultFn(() => randomUUID()),
+  email: varchar('email', { length: 255 }).notNull(),
+  code: varchar('code', { length: 10 }).notNull(),
+  purpose: varchar('purpose', { length: 50 }).notNull().default('register'),
+  expiresAt: customTimestamp('expires_at', { precision: 3 }).notNull(),
+  attemptCount: int('attempt_count').notNull().default(0),
+  maxAttempts: int('max_attempts').notNull().default(5),
+  used: boolean('used').notNull().default(false),
+  createdAt: customTimestamp('_created_at', { precision: 3 })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+}, (table) => [
+  index('evc_email_idx').on(table.email),
+  index('evc_email_purpose_idx').on(table.email, table.purpose),
 ]);
 
 // table aliases

@@ -38,8 +38,8 @@ export interface RegisterRequest {
   username: string;
   password: string;
   displayName?: string;
-  email?: string;
-  applicationReason: string;
+  email: string;
+  verifyCode: string;
 }
 
 export interface RegisterApplication {
@@ -52,6 +52,11 @@ export interface RegisterApplication {
   rejectReason?: string;
   createdAt: string;
   reviewedAt?: string;
+}
+
+export interface SendVerifyCodeRequest {
+  email: string;
+  purpose?: 'register' | 'reset-password';
 }
 
 export interface ChangePasswordRequest {

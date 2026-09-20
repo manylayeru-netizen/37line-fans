@@ -213,6 +213,24 @@ CREATE TABLE IF NOT EXISTS `diary_entries` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
+-- ============================================================
+-- 邮箱验证码表
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `email_verification_codes` (
+  `id` varchar(36) NOT NULL COMMENT 'UUID 主键',
+  `email` varchar(255) NOT NULL COMMENT '邮箱地址',
+  `code` varchar(10) NOT NULL COMMENT '验证码（6位数字）',
+  `purpose` varchar(50) NOT NULL DEFAULT 'register' COMMENT '用途：register / reset-password',
+  `expires_at` datetime(3) NOT NULL COMMENT '过期时间',
+  `attempt_count` int NOT NULL DEFAULT 0 COMMENT '已尝试次数',
+  `max_attempts` int NOT NULL DEFAULT 5 COMMENT '最大尝试次数',
+  `used` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已使用',
+  `_created_at` datetime(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `evc_email_idx` (`email`),
+  KEY `evc_email_purpose_idx` (`email`, `purpose`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邮箱验证码表';
+
 -- 建表完成。说明：
 -- - 所有主键使用 varchar(36) 存储 UUID（应用层生成）
 -- - datetime(3) 对应原 timestamptz(3)，精度到毫秒

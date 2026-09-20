@@ -10,6 +10,7 @@ import type {
   OnThisDayPhoto,
   OnThisDayDiaryEntry,
 } from '@shared/api.interface';
+import { toDateStringRequired } from '@server/common/utils/date';
 
 type CalendarRow = typeof calendarEvents.$inferSelect;
 type CollectionRow = typeof collectionCards.$inferSelect;
@@ -50,7 +51,7 @@ export class HomeService {
     const events: OnThisDayCalendarEvent[] = eventRows.map((row: CalendarRow) => ({
       id: row.id,
       title: row.title,
-      eventDate: row.eventDate.toISOString().split('T')[0],
+      eventDate: toDateStringRequired(row.eventDate),
       description: row.description ?? undefined,
       sourceUrl: row.sourceUrl ?? undefined,
       type: 'calendar' as const,
@@ -67,7 +68,7 @@ export class HomeService {
     const diaryEntriesList: OnThisDayDiaryEntry[] = diaryRows.map((row: DiaryRow) => ({
       id: row.id,
       title: row.title,
-      entryDate: row.entryDate.toISOString().split('T')[0],
+      entryDate: toDateStringRequired(row.entryDate),
       weather: row.weather ?? 'sunny',
       type: 'diary' as const,
     }));
@@ -90,8 +91,8 @@ export class HomeService {
       .from(calendarEvents)
       .where(
         and(
-          sql`MONTH(${calendarEvents.eventDate}) = ${month}`,
-          sql`DAY(${calendarEvents.eventDate}) = ${day}`,
+          sql`EXTRACT(MONTH FROM ${calendarEvents.eventDate}) = ${month}`,
+          sql`EXTRACT(DAY FROM ${calendarEvents.eventDate}) = ${day}`,
         ),
       )
       .orderBy(desc(calendarEvents.eventDate))
@@ -106,8 +107,8 @@ export class HomeService {
       .from(collectionCards)
       .where(
         and(
-          sql`MONTH(${collectionCards.createdAt}) = ${month}`,
-          sql`DAY(${collectionCards.createdAt}) = ${day}`,
+          sql`EXTRACT(MONTH FROM ${collectionCards.createdAt}) = ${month}`,
+          sql`EXTRACT(DAY FROM ${collectionCards.createdAt}) = ${day}`,
         ),
       )
       .orderBy(desc(collectionCards.createdAt))
@@ -123,8 +124,8 @@ export class HomeService {
       .where(
         and(
           eq(diaryEntries.status, 'published'),
-          sql`MONTH(${diaryEntries.entryDate}) = ${month}`,
-          sql`DAY(${diaryEntries.entryDate}) = ${day}`,
+          sql`EXTRACT(MONTH FROM ${diaryEntries.entryDate}) = ${month}`,
+          sql`EXTRACT(DAY FROM ${diaryEntries.entryDate}) = ${day}`,
         ),
       )
       .orderBy(desc(diaryEntries.entryDate))

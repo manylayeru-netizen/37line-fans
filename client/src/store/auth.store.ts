@@ -12,6 +12,7 @@ interface AuthState {
 
   login: (username: string, password: string) => Promise<void>;
   register: (data: any) => Promise<void>;
+  registerWithVerify: (data: any) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
   setUser: (user: SiteUser) => void;
@@ -43,6 +44,19 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await apiPost('/api/auth/register', data);
       set({ isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  registerWithVerify: async (data: any) => {
+    set({ isLoading: true });
+    try {
+      const res = await apiPost<any>('/api/auth/register', data);
+      const { token, user } = res.data;
+      setToken(token);
+      set({ user, token, isAuthenticated: true, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       throw error;

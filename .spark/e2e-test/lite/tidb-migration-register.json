@@ -1,0 +1,9 @@
+{"cases":[
+  {"id":1,"priority":"p0","description":"打开首页 / ，页面非白屏，显示 37line 标题和丝带导航栏，那年今日板块正常渲染（有内容或无内容都不报错）"},
+  {"id":2,"priority":"p0","description":"打开注册页 /register ，显示邮箱输入框、获取验证码按钮（带 60s 倒计时）、验证码输入框，不显示申请理由输入框和写手帐装饰文案"},
+  {"id":3,"priority":"p0","description":"打开登录页 /login ，用户名密码输入框和登录按钮正常显示，「回到我们的小世界」文字存在"},
+  {"id":4,"priority":"p1","description":"打开今日记录页 /diary ，页面渲染正常不白屏"},
+  {"id":5,"priority":"p1","description":"打开收集册页 /collection ，页面正常显示"},
+  {"id":6,"priority":"p1","description":"打开留言板页 /guestbook ，便签区域正常显示"},
+  {"id":7,"priority":"p1","description":"打开文学鉴赏页 /literature ，帖子列表正常显示"}
+]}

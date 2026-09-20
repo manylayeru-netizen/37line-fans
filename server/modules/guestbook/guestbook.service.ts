@@ -16,6 +16,7 @@ import type {
   PagedResponse,
 } from '@shared/api.interface';
 import { ContentFilterService } from '@server/common/services/content-filter.service';
+import { toIsoStringRequired } from '@server/common/utils/date';
 import { randomUUID } from 'crypto';
 
 type NoteStatus = 'pending' | 'approved' | 'rejected';
@@ -248,7 +249,7 @@ export class GuestbookService {
       positionX: row.positionX ?? 0,
       positionY: row.positionY ?? 0,
       status: row.status as GuestbookNote['status'],
-      createdAt: row.createdAt.toISOString(),
+      createdAt: toIsoStringRequired(row.createdAt),
     };
   }
 }

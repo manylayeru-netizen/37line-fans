@@ -13,6 +13,7 @@ interface DiaryWithSubmitter {
 }
 import type { DiaryEntry, PagedResponse } from '@shared/api.interface';
 import { AuthService } from '@server/modules/auth/auth.service';
+import { toIsoString, toIsoStringRequired, toDateStringRequired } from '@server/common/utils/date';
 
 interface CreateDiaryDto {
   title: string;
@@ -79,7 +80,7 @@ export class DiaryService {
       title: row.title,
       content: row.content,
       weather: row.weather ?? 'sunny',
-      entryDate: row.entryDate.toISOString().split('T')[0],
+      entryDate: toDateStringRequired(row.entryDate),
       illustrationUrl: row.illustrationUrl ?? undefined,
       status: row.status as 'published' | 'draft' | 'offline' | 'pending' | 'rejected',
       sortOrder: row.sortOrder ?? 0,
@@ -91,12 +92,12 @@ export class DiaryService {
       characterBackground: row.characterBackground ?? undefined,
       recommendationReason: row.recommendationReason ?? undefined,
       rejectReason: row.rejectReason ?? undefined,
-      reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : undefined,
+      reviewedAt: toIsoString(row.reviewedAt),
       submitterId: row.submitterId ?? undefined,
       submitterName: resolvedName,
       submitterAvatarUrl: resolvedAvatar,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
+      createdAt: toIsoStringRequired(row.createdAt),
+      updatedAt: toIsoStringRequired(row.updatedAt),
     };
   }
 

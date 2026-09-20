@@ -14,6 +14,7 @@ interface CalendarWithUploader {
 }
 import type { CalendarEvent } from '@shared/api.interface';
 import { AuthService } from '@server/modules/auth/auth.service';
+import { toDateStringRequired, getTime } from '@server/common/utils/date';
 
 interface CreateCalendarDto {
   title: string;
@@ -56,7 +57,7 @@ export class CalendarService {
     return {
       id: row.id,
       title: row.title,
-      eventDate: row.eventDate.toISOString().split('T')[0],
+      eventDate: toDateStringRequired(row.eventDate),
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
@@ -100,7 +101,7 @@ export class CalendarService {
     return {
       id: row.id,
       title: row.title,
-      eventDate: row.eventDate.toISOString().split('T')[0],
+      eventDate: toDateStringRequired(row.eventDate),
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
@@ -134,7 +135,7 @@ export class CalendarService {
           .where(
             and(
               gte(calendarEvents.eventDate, new Date(`${year}-01-01`)),
-              sql`${calendarEvents.eventDate} < ${new Date(`${Number(year) + 1}-01-01`)}`,
+              sql`${calendarEvents.eventDate} < ${new Date(`${Number(year) + 1}-01-01`).toISOString()}`,
             ),
           )
           .orderBy(asc(calendarEvents.eventDate))
@@ -144,7 +145,6 @@ export class CalendarService {
   }
 
   async getUpcoming(limit: number = 5): Promise<CalendarEvent[]> {
-    // 取距离今天最近的未来事件；若不足 limit 个，补充已过的最近事件
     const todayStr: string = new Date().toISOString().split('T')[0];
     const today: Date = new Date(todayStr);
 
@@ -176,14 +176,14 @@ export class CalendarService {
       })
       .from(calendarEvents)
       .leftJoin(siteUsers, eq(calendarEvents.uploaderId, siteUsers.id))
-      .where(sql`${calendarEvents.eventDate} < ${today}`)
+      .where(sql`${calendarEvents.eventDate} < ${today.toISOString()}`)
       .orderBy(sql`${calendarEvents.eventDate} DESC`)
       .limit(remaining);
 
     const combined: CalendarWithUploader[] = [...futureRows, ...pastRows];
     return combined
       .sort((a: CalendarWithUploader, b: CalendarWithUploader) =>
-        a.event.eventDate.getTime() - b.event.eventDate.getTime(),
+        getTime(a.event.eventDate) - getTime(b.event.eventDate),
       )
       .map((row: CalendarWithUploader) => this.mapJoinedRow(row));
   }

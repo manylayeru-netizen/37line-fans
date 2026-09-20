@@ -17,6 +17,7 @@ import type {
    LoginRequest,
    LoginResponse,
    RegisterRequest,
+   SendVerifyCodeRequest,
    SiteUser,
    UpdateAvatarRequest,
    UpdateDisplayNameRequest,
@@ -33,9 +34,19 @@ export class AuthController {
     return { code: 0, message: 'ok', data: result };
   }
 
+  @Post('send-verify-code')
+  async sendVerifyCode(
+    @Body() body: SendVerifyCodeRequest,
+  ): Promise<ApiResponse<null>> {
+    await this.authService.sendVerificationCode(body);
+    return { code: 0, message: '验证码已发送', data: null };
+  }
+
   @Post('register')
-  async register(@Body() body: RegisterRequest): Promise<ApiResponse<{ id: string }>> {
-    const result = await this.authService.submitApplication(body);
+  async register(
+    @Body() body: RegisterRequest,
+  ): Promise<ApiResponse<LoginResponse>> {
+    const result = await this.authService.verifyAndRegister(body);
     return { code: 0, message: 'ok', data: result };
   }
 

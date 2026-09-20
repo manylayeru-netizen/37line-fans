@@ -34,7 +34,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
     { path: '/admin/guestbook', label: '留言审核', icon: MessageSquare },
     { path: '/admin/dailyfics', label: '推文管理', icon: FileText },
     { path: '/admin/users', label: '用户管理', icon: Users },
-    { path: '/admin/applications', label: '注册申请', icon: UserPlus },
+    { path: '/admin/applications', label: '注册申请历史', icon: UserPlus },
   ];
 
   return (

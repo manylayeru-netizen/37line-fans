@@ -21,8 +21,16 @@ export async function login(
   return res.data;
 }
 
-export async function register(data: RegisterRequest): Promise<void> {
-  await apiPost('/api/auth/register', data);
+export async function register(data: RegisterRequest): Promise<LoginResponse> {
+  const res = await apiPost<{ data: LoginResponse }>('/api/auth/register', data);
+  return res.data;
+}
+
+export async function sendVerifyCode(
+  email: string,
+  purpose: 'register' | 'reset-password' = 'register',
+): Promise<void> {
+  await apiPost('/api/auth/send-verify-code', { email, purpose });
 }
 
 export async function getCurrentUser(): Promise<SiteUser> {

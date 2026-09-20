@@ -25,6 +25,7 @@ import type {
   AdminStats,
 } from '@shared/api.interface';
 import { hashPassword } from '../auth/auth.service';
+import { toIsoString, toIsoStringRequired } from '@server/common/utils/date';
 
 type SiteUserRow = typeof siteUsers.$inferSelect;
 type RegisterApplicationRow = typeof registerApplications.$inferSelect;
@@ -39,7 +40,7 @@ function mapSiteUser(row: SiteUserRow): SiteUser {
     status: row.status as 'active' | 'disabled',
     avatarUrl: row.avatarUrl ?? undefined,
     bio: row.bio ?? undefined,
-    createdAt: row.createdAt.toISOString(),
+    createdAt: toIsoStringRequired(row.createdAt),
   };
 }
 
@@ -52,8 +53,8 @@ function mapRegisterApplication(row: RegisterApplicationRow): RegisterApplicatio
     applicationReason: row.applicationReason,
     status: row.status as 'pending' | 'approved' | 'rejected',
     rejectReason: row.rejectReason ?? undefined,
-    createdAt: row.createdAt.toISOString(),
-    reviewedAt: row.reviewedAt ? row.reviewedAt.toISOString() : undefined,
+    createdAt: toIsoStringRequired(row.createdAt),
+    reviewedAt: toIsoString(row.reviewedAt),
   };
 }
 

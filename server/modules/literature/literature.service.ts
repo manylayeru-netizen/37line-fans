@@ -38,6 +38,7 @@ import type {
   PagedResponse,
 } from '@shared/api.interface';
 import { ContentFilterService } from '@server/common/services/content-filter.service';
+import { toIsoString, toIsoStringRequired } from '@server/common/utils/date';
 
 type PostStatus = 'pending' | 'published' | 'rejected';
 type CommentStatus = 'approved' | 'pending' | 'rejected';
@@ -830,9 +831,9 @@ export class LiteratureService {
       rejectReason: row.rejectReason ?? undefined,
       authorUserId: row.authorUserId ?? undefined,
       tags: [], // 由 attachTagsToPosts 填充
-      reviewAt: row.reviewedAt ? row.reviewedAt.toISOString() : undefined,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
+      reviewAt: toIsoString(row.reviewedAt),
+      createdAt: toIsoStringRequired(row.createdAt),
+      updatedAt: toIsoStringRequired(row.updatedAt),
     };
   }
 
@@ -856,9 +857,9 @@ export class LiteratureService {
       authorDisplayName: displayName,
       authorAvatarUrl: author?.avatarUrl ?? undefined,
       tags: [], // 由 attachTagsToPosts 填充
-      reviewAt: row.post.reviewedAt ? row.post.reviewedAt.toISOString() : undefined,
-      createdAt: row.post.createdAt.toISOString(),
-      updatedAt: row.post.updatedAt.toISOString(),
+      reviewAt: toIsoString(row.post.reviewedAt),
+      createdAt: toIsoStringRequired(row.post.createdAt),
+      updatedAt: toIsoStringRequired(row.post.updatedAt),
     };
   }
 
@@ -892,7 +893,7 @@ export class LiteratureService {
       userId: row.userId ?? undefined,
       guestName: row.guestName ?? undefined,
       status: row.status,
-      createdAt: row.createdAt.toISOString(),
+      createdAt: toIsoStringRequired(row.createdAt),
     };
   }
 
@@ -916,7 +917,7 @@ export class LiteratureService {
       displayName: finalDisplayName,
       avatarUrl: user?.avatarUrl ?? undefined,
       status: row.comment.status,
-      createdAt: row.comment.createdAt.toISOString(),
+      createdAt: toIsoStringRequired(row.comment.createdAt),
     };
   }
 

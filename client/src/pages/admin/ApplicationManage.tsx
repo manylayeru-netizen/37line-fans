@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Check, X, Clock, UserPlus, FileText } from 'lucide-react';
+import { Clock, UserPlus, FileText, Info } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@client/src/components/ui/dialog';
-import { Button } from '@client/src/components/ui/button';
 import { Badge } from '@client/src/components/ui/badge';
-import { Label } from '@client/src/components/ui/label';
 import StickerPagination from '@client/src/components/StickerPagination';
 import { adminApi } from '@client/src/api';
 import type { RegisterApplication } from '@shared/api.interface';
@@ -36,12 +27,8 @@ const ApplicationManage: React.FC<ApplicationManageProps> = () => {
   const [total, setTotal] = useState<number>(0);
   const [page, setPage] = useState<number>(1);
   const [pageSize] = useState<number>(10);
-  const [status, setStatus] = useState<string>('pending');
+  const [status, setStatus] = useState<string>('approved');
   const [loading, setLoading] = useState<boolean>(false);
-
-  const [rejectOpen, setRejectOpen] = useState<boolean>(false);
-  const [rejectReason, setRejectReason] = useState<string>('');
-  const [targetId, setTargetId] = useState<string>('');
 
   const loadApplications = async () => {
     setLoading(true);
@@ -69,40 +56,6 @@ const ApplicationManage: React.FC<ApplicationManageProps> = () => {
     setPage(1);
   };
 
-  const handleApprove = async (id: string) => {
-    try {
-      await adminApi.reviewApplication(id, { status: 'approved' });
-      toast.success('申请已通过 ✨');
-      loadApplications();
-    } catch {
-      toast.error('操作失败，请重试');
-    }
-  };
-
-  const openRejectDialog = (id: string) => {
-    setTargetId(id);
-    setRejectReason('');
-    setRejectOpen(true);
-  };
-
-  const handleReject = async () => {
-    if (!rejectReason.trim()) {
-      toast.error('请填写拒绝原因');
-      return;
-    }
-    try {
-      await adminApi.reviewApplication(targetId, {
-        status: 'rejected',
-        rejectReason: rejectReason.trim(),
-      });
-      toast.success('已拒绝该申请');
-      setRejectOpen(false);
-      loadApplications();
-    } catch {
-      toast.error('操作失败，请重试');
-    }
-  };
-
   return (
     <div className="pb-8">
       <div className="mb-6">
@@ -110,9 +63,12 @@ const ApplicationManage: React.FC<ApplicationManageProps> = () => {
           className="text-3xl text-ink mb-1"
           style={{ fontFamily: 'var(--font-handwriting)' }}
         >
-          注册申请审核
+          注册申请历史
         </h2>
-        <p className="text-sm text-cocoa/60">处理新用户的注册申请</p>
+        <p className="text-sm text-cocoa/60 flex items-center gap-1">
+          <Info size={14} />
+          新用户已改为邮箱验证码即时注册，此处仅显示历史申请记录
+        </p>
       </div>
 
       {/* Tabs */}
@@ -209,30 +165,12 @@ const ApplicationManage: React.FC<ApplicationManageProps> = () => {
                       </div>
                     )}
                     <p className="text-xs text-cocoa/50 mt-3 flex items-center gap-1">
-                      <Clock size={12} />
-                      申请时间：
-                      {new Date(app.createdAt).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
-                  {app.status === 'pending' && (
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        onClick={() => handleApprove(app.id)}
-                        variant="default"
-                        className="rounded-full gap-1 bg-success hover:bg-success/90"
-                      >
-                        <Check size={16} /> 通过
-                      </Button>
-                      <Button
-                        onClick={() => openRejectDialog(app.id)}
-                        variant="destructive"
-                        className="rounded-full gap-1"
-                      >
-                        <X size={16} /> 拒绝
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                       <Clock size={12} />
+                       申请时间：
+                       {new Date(app.createdAt).toLocaleString('zh-CN')}
+                     </p>
+                   </div>
+                 </div>
               </div>
             );
           })}
@@ -245,46 +183,6 @@ const ApplicationManage: React.FC<ApplicationManageProps> = () => {
         pageSize={pageSize}
         onPageChange={setPage}
       />
-
-      {/* Reject Dialog */}
-      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="max-w-md bg-paper border-2 border-dashed border-grid rounded-2xl">
-          <DialogHeader>
-            <DialogTitle
-              className="text-xl text-ink"
-              style={{ fontFamily: 'var(--font-handwriting)' }}
-            >
-              拒绝申请
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label className="text-cocoa">请填写拒绝原因</Label>
-            <textarea
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="请说明拒绝的原因..."
-              rows={4}
-              className="w-full rounded-lg border border-grid bg-cream/30 p-3 text-sm text-cocoa focus:border-shiba focus:ring-2 focus:ring-shiba/20 outline-none resize-none"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRejectOpen(false)}
-              className="rounded-full"
-            >
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              className="rounded-full"
-            >
-              确认拒绝
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
