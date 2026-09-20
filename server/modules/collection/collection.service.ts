@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, count, asc, and, sql } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
 import { collectionCards, siteUsers } from '@server/database/tables';
 import type { CollectionCard, PagedResponse } from '@shared/api.interface';
@@ -45,7 +46,7 @@ export class CollectionService {
   private readonly logger = new Logger(CollectionService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly authService: AuthService,
   ) {}
 
@@ -178,7 +179,7 @@ export class CollectionService {
       })
       .from(collectionCards)
       .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
-      .where(sql`TRIM(BOTH FROM ${collectionCards.category}) = ${'官图'}`)
+      .where(sql`TRIM(${collectionCards.category}) = ${'官图'}`)
       .orderBy(asc(collectionCards.sortOrder), desc(collectionCards.createdAt))
       .limit(limit);
 
@@ -212,9 +213,11 @@ export class CollectionService {
       ? uploader.displayName || uploader.username
       : null;
 
-    const rows: CollectionRow[] = await this.db
+    const id: string = randomUUID();
+    await this.db
       .insert(collectionCards)
       .values({
+        id,
         title: dto.title,
         description: dto.description ?? null,
         imageUrl: dto.imageUrl,
@@ -224,11 +227,10 @@ export class CollectionService {
         uploaderId: uploader ? uploader.id : null,
         uploaderName: uploaderName,
         uploaderAvatarUrl: uploader?.avatarUrl ?? null,
-      })
-      .returning();
+      });
 
-    this.logger.log(`创建收集册卡片: ${rows[0].id}`);
-    return this.findWithUploaderById(rows[0].id);
+    this.logger.log(`创建收集册卡片: ${id}`);
+    return this.findWithUploaderById(id);
   }
 
   async createWithUploader(
@@ -279,13 +281,12 @@ export class CollectionService {
 
     patch.updatedAt = new Date();
 
-    const rows: CollectionRow[] = await this.db
+    const result = await this.db
       .update(collectionCards)
       .set(patch)
-      .where(eq(collectionCards.id, id))
-      .returning();
+      .where(eq(collectionCards.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('收集册卡片不存在');
     }
 
@@ -294,12 +295,11 @@ export class CollectionService {
   }
 
   async delete(id: string): Promise<void> {
-    const rows: { id: string }[] = await this.db
+    const result = await this.db
       .delete(collectionCards)
-      .where(eq(collectionCards.id, id))
-      .returning({ id: collectionCards.id });
+      .where(eq(collectionCards.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('收集册卡片不存在');
     }
 

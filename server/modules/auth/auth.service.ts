@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, and, inArray } from 'drizzle-orm';
 import * as crypto from 'crypto';
 
@@ -45,7 +45,7 @@ export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly jwtService: JwtService,
     private readonly contentFilter: ContentFilterService,
   ) {}
@@ -138,21 +138,20 @@ export class AuthService implements OnModuleInit {
     }
 
     const passwordHash: string = hashPassword(password);
+    const id: string = crypto.randomUUID();
 
-    const inserted = await this.db
-      .insert(registerApplications)
-      .values({
-        username,
-        passwordHash,
-        displayName: displayName ?? null,
-        email: email ?? null,
-        applicationReason,
-        status: 'pending',
-      })
-      .returning({ id: registerApplications.id });
+    await this.db.insert(registerApplications).values({
+      id,
+      username,
+      passwordHash,
+      displayName: displayName ?? null,
+      email: email ?? null,
+      applicationReason,
+      status: 'pending',
+    });
 
     this.logger.log(`注册申请已提交: ${username}`);
-    return { id: inserted[0].id };
+    return { id };
   }
 
   async getCurrentUser(userId: string): Promise<SiteUser> {
@@ -214,17 +213,22 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('头像地址不能为空');
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(siteUsers)
       .set({ avatarUrl })
-      .where(eq(siteUsers.id, userId))
-      .returning();
+      .where(eq(siteUsers.id, userId));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('用户不存在');
     }
 
-    return mapSiteUser(updated[0]);
+    const users: SiteUserRow[] = await this.db
+      .select()
+      .from(siteUsers)
+      .where(eq(siteUsers.id, userId))
+      .limit(1);
+
+    return mapSiteUser(users[0]);
   }
 
   async updateDisplayName(userId: string, displayName: string): Promise<SiteUser> {
@@ -238,17 +242,22 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('昵称包含敏感内容，请修改后重新提交');
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(siteUsers)
       .set({ displayName: trimmed })
-      .where(eq(siteUsers.id, userId))
-      .returning();
+      .where(eq(siteUsers.id, userId));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('用户不存在');
     }
 
-    return mapSiteUser(updated[0]);
+    const users: SiteUserRow[] = await this.db
+      .select()
+      .from(siteUsers)
+      .where(eq(siteUsers.id, userId))
+      .limit(1);
+
+    return mapSiteUser(users[0]);
   }
 
   async getUserDisplayName(userId: string): Promise<string> {

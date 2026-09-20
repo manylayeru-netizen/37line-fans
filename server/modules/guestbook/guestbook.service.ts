@@ -7,7 +7,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, count } from 'drizzle-orm';
 import { guestbookNotes } from '@server/database/tables';
 import type {
@@ -25,7 +25,7 @@ export class GuestbookService {
   private readonly logger = new Logger(GuestbookService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly contentFilter: ContentFilterService,
   ) {}
 
@@ -147,15 +147,19 @@ export class GuestbookService {
 
   /** 审核通过 */
   async approveNote(id: string): Promise<GuestbookNote> {
-    const updated = await this.db
+    const result = await this.db
       .update(guestbookNotes)
       .set({ status: 'approved' })
-      .where(eq(guestbookNotes.id, id))
-      .returning();
+      .where(eq(guestbookNotes.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('留言不存在');
     }
+
+    const updated = await this.db
+      .select()
+      .from(guestbookNotes)
+      .where(eq(guestbookNotes.id, id));
 
     this.logger.log(`留言审核通过，id=${id}`);
     return this.mapNote(updated[0]);
@@ -163,15 +167,19 @@ export class GuestbookService {
 
   /** 审核拒绝 */
   async rejectNote(id: string): Promise<GuestbookNote> {
-    const updated = await this.db
+    const result = await this.db
       .update(guestbookNotes)
       .set({ status: 'rejected' })
-      .where(eq(guestbookNotes.id, id))
-      .returning();
+      .where(eq(guestbookNotes.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('留言不存在');
     }
+
+    const updated = await this.db
+      .select()
+      .from(guestbookNotes)
+      .where(eq(guestbookNotes.id, id));
 
     this.logger.log(`留言审核拒绝，id=${id}`);
     return this.mapNote(updated[0]);
@@ -204,12 +212,11 @@ export class GuestbookService {
       throw new ForbiddenException('无权删除该留言');
     }
 
-    const deleted = await this.db
+    const result = await this.db
       .delete(guestbookNotes)
-      .where(eq(guestbookNotes.id, id))
-      .returning({ id: guestbookNotes.id });
+      .where(eq(guestbookNotes.id, id));
 
-    if (deleted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('留言不存在');
     }
 
@@ -218,12 +225,11 @@ export class GuestbookService {
 
   /** 物理删除 */
   async deleteNote(id: string): Promise<void> {
-    const deleted = await this.db
+    const result = await this.db
       .delete(guestbookNotes)
-      .where(eq(guestbookNotes.id, id))
-      .returning({ id: guestbookNotes.id });
+      .where(eq(guestbookNotes.id, id));
 
-    if (deleted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('留言不存在');
     }
 

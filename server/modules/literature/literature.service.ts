@@ -8,7 +8,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { randomUUID } from 'crypto';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import {
   eq,
   desc,
@@ -16,7 +17,7 @@ import {
   count,
   and,
   or,
-  ilike,
+  like,
   inArray,
   type SQL,
 } from 'drizzle-orm';
@@ -60,7 +61,7 @@ export class LiteratureService {
   private readonly logger = new Logger(LiteratureService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly contentFilter: ContentFilterService,
   ) {}
 
@@ -92,10 +93,20 @@ export class LiteratureService {
       throw new ConflictException('标签名称或 slug 已存在');
     }
 
-    const inserted = await this.db
+    const id: string = randomUUID();
+    const result = await this.db
       .insert(literatureTags)
-      .values({ name, slug, color })
-      .returning();
+      .values({ id, name, slug, color });
+
+    if (result[0].affectedRows === 0) {
+      throw new BadRequestException('创建标签失败');
+    }
+
+    const inserted = await this.db
+      .select()
+      .from(literatureTags)
+      .where(eq(literatureTags.id, id))
+      .limit(1);
 
     if (inserted.length === 0) {
       throw new BadRequestException('创建标签失败');
@@ -120,27 +131,31 @@ export class LiteratureService {
       throw new BadRequestException('未提供可更新字段');
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(literatureTags)
       .set(patch)
-      .where(eq(literatureTags.id, id))
-      .returning();
+      .where(eq(literatureTags.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('标签不存在');
     }
+
+    const updated = await this.db
+      .select()
+      .from(literatureTags)
+      .where(eq(literatureTags.id, id))
+      .limit(1);
 
     this.logger.log(`标签更新成功，id=${id}`);
     return this.mapTag(updated[0]);
   }
 
   async deleteTag(id: string): Promise<void> {
-    const deleted = await this.db
+    const result = await this.db
       .delete(literatureTags)
-      .where(eq(literatureTags.id, id))
-      .returning({ id: literatureTags.id });
+      .where(eq(literatureTags.id, id));
 
-    if (deleted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('标签不存在');
     }
 
@@ -160,8 +175,8 @@ export class LiteratureService {
     const statusCondition = eq(literaturePosts.status, 'published');
     const keywordCondition = keyword
       ? or(
-          ilike(literaturePosts.title, `%${keyword}%`),
-          ilike(literaturePosts.author, `%${keyword}%`),
+          like(literaturePosts.title, `%${keyword}%`),
+          like(literaturePosts.author, `%${keyword}%`),
         )
       : undefined;
 
@@ -284,10 +299,12 @@ export class LiteratureService {
       }
     }
 
+    const postId: string = randomUUID();
     const result = await this.db.transaction(async (tx) => {
-      const inserted = await tx
+      const insertResult = await tx
         .insert(literaturePosts)
         .values({
+          id: postId,
           title: dto.title,
           author: dto.author,
           sourcePlatform: dto.sourcePlatform,
@@ -295,14 +312,12 @@ export class LiteratureService {
           recommendationReason: dto.recommendationReason,
           authorUserId,
           status: isAdmin ? 'published' : 'pending',
-        })
-        .returning();
+        });
 
-      if (inserted.length === 0) {
+      if (insertResult[0].affectedRows === 0) {
         throw new BadRequestException('帖子创建失败');
       }
 
-      const postId: string = inserted[0].id;
 
       // 关联标签
       if (dto.tagIds && dto.tagIds.length > 0) {
@@ -313,11 +328,21 @@ export class LiteratureService {
         await tx.insert(literaturePostTags).values(tagRelations);
       }
 
+      const inserted = await tx
+        .select()
+        .from(literaturePosts)
+        .where(eq(literaturePosts.id, postId))
+        .limit(1);
+
+      if (inserted.length === 0) {
+        throw new BadRequestException('帖子创建失败');
+      }
+
       return inserted[0];
     });
 
     this.logger.log(
-      `帖子提交成功，id=${result.id}，作者=${authorUserId}，status=${isAdmin ? 'published' : 'pending'}`,
+      `帖子提交成功，id=${postId}，作者=${authorUserId}，status=${isAdmin ? 'published' : 'pending'}`,
     );
     const items = await this.attachTagsToPosts([await this.findPostWithAuthorById(result.id)]);
     return items[0];
@@ -340,8 +365,8 @@ export class LiteratureService {
 
     const keywordCondition = keyword
       ? or(
-          ilike(literaturePosts.title, `%${keyword}%`),
-          ilike(literaturePosts.author, `%${keyword}%`),
+          like(literaturePosts.title, `%${keyword}%`),
+          like(literaturePosts.author, `%${keyword}%`),
         )
       : undefined;
 
@@ -410,13 +435,12 @@ export class LiteratureService {
       patch.rejectReason = dto.rejectReason ?? '';
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(literaturePosts)
       .set(patch)
-      .where(eq(literaturePosts.id, id))
-      .returning();
+      .where(eq(literaturePosts.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('帖子不存在');
     }
 
@@ -452,15 +476,19 @@ export class LiteratureService {
       let postRow: typeof literaturePosts.$inferSelect | undefined;
 
       if (hasPostUpdate) {
-        const updated = await tx
+        const updateResult = await tx
           .update(literaturePosts)
           .set(patch)
-          .where(eq(literaturePosts.id, id))
-          .returning();
+          .where(eq(literaturePosts.id, id));
 
-        if (updated.length === 0) {
+        if (updateResult[0].affectedRows === 0) {
           throw new NotFoundException('帖子不存在');
         }
+        const updated = await tx
+          .select()
+          .from(literaturePosts)
+          .where(eq(literaturePosts.id, id))
+          .limit(1);
         postRow = updated[0];
       } else {
         const existing = await tx
@@ -524,12 +552,11 @@ export class LiteratureService {
       }
     }
 
-    const deleted = await this.db
+    const result = await this.db
       .delete(literaturePosts)
-      .where(eq(literaturePosts.id, id))
-      .returning({ id: literaturePosts.id });
+      .where(eq(literaturePosts.id, id));
 
-    if (deleted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('帖子不存在');
     }
 
@@ -645,23 +672,24 @@ export class LiteratureService {
       throw new BadRequestException('匿名评论请填写昵称');
     }
 
-    const inserted = await this.db
+    const commentId: string = randomUUID();
+    const result = await this.db
       .insert(literatureComments)
       .values({
+        id: commentId,
         postId,
         content,
         userId: userId ?? undefined,
         guestName: guestName ?? undefined,
         status: 'approved',
-      })
-      .returning();
+      });
 
-    if (inserted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new BadRequestException('评论发表失败');
     }
 
-    this.logger.log(`评论发表成功，id=${inserted[0].id}`);
-    return this.findCommentWithUserById(inserted[0].id);
+    this.logger.log(`评论发表成功，id=${commentId}`);
+    return this.findCommentWithUserById(commentId);
   }
 
   async getAdminComments(
@@ -720,12 +748,11 @@ export class LiteratureService {
   }
 
   async deleteComment(id: string): Promise<void> {
-    const deleted = await this.db
+    const result = await this.db
       .delete(literatureComments)
-      .where(eq(literatureComments.id, id))
-      .returning({ id: literatureComments.id });
+      .where(eq(literatureComments.id, id));
 
-    if (deleted.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('评论不存在');
     }
 

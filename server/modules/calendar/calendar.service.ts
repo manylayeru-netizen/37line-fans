@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, asc, sql, gte, and, inArray } from 'drizzle-orm';
+import { randomUUID } from 'node:crypto';
 
 import { calendarEvents, siteUsers } from '@server/database/tables';
 
@@ -39,7 +40,7 @@ export class CalendarService {
   private readonly logger = new Logger(CalendarService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly authService: AuthService,
   ) {}
 
@@ -55,7 +56,7 @@ export class CalendarService {
     return {
       id: row.id,
       title: row.title,
-      eventDate: row.eventDate,
+      eventDate: row.eventDate.toISOString().split('T')[0],
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
@@ -99,7 +100,7 @@ export class CalendarService {
     return {
       id: row.id,
       title: row.title,
-      eventDate: row.eventDate,
+      eventDate: row.eventDate.toISOString().split('T')[0],
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
@@ -132,8 +133,8 @@ export class CalendarService {
       ? await baseSelect
           .where(
             and(
-              sql`${calendarEvents.eventDate} >= ${`${year}-01-01`}`,
-              sql`${calendarEvents.eventDate} < ${`${Number(year) + 1}-01-01`}`,
+              gte(calendarEvents.eventDate, new Date(`${year}-01-01`)),
+              sql`${calendarEvents.eventDate} < ${new Date(`${Number(year) + 1}-01-01`)}`,
             ),
           )
           .orderBy(asc(calendarEvents.eventDate))
@@ -144,7 +145,8 @@ export class CalendarService {
 
   async getUpcoming(limit: number = 5): Promise<CalendarEvent[]> {
     // 取距离今天最近的未来事件；若不足 limit 个，补充已过的最近事件
-    const today: string = new Date().toISOString().split('T')[0];
+    const todayStr: string = new Date().toISOString().split('T')[0];
+    const today: Date = new Date(todayStr);
 
     const futureRows: CalendarWithUploader[] = await this.db
       .select({
@@ -181,7 +183,7 @@ export class CalendarService {
     const combined: CalendarWithUploader[] = [...futureRows, ...pastRows];
     return combined
       .sort((a: CalendarWithUploader, b: CalendarWithUploader) =>
-        a.event.eventDate.localeCompare(b.event.eventDate),
+        a.event.eventDate.getTime() - b.event.eventDate.getTime(),
       )
       .map((row: CalendarWithUploader) => this.mapJoinedRow(row));
   }
@@ -191,20 +193,21 @@ export class CalendarService {
   }
 
   async create(dto: CreateCalendarDto): Promise<CalendarEvent> {
-    const rows: CalendarRow[] = await this.db
+    const id: string = randomUUID();
+    await this.db
       .insert(calendarEvents)
       .values({
+        id,
         title: dto.title,
-        eventDate: dto.eventDate,
+        eventDate: new Date(dto.eventDate),
         description: dto.description ?? null,
         hasCrown: dto.hasCrown ?? false,
         eventType: dto.eventType ?? 'anniversary',
         sourceUrl: dto.sourceUrl ?? null,
-      })
-      .returning();
+      });
 
-    this.logger.log(`创建日历事件: ${rows[0].id}`);
-    return this.findWithUploaderById(rows[0].id);
+    this.logger.log(`创建日历事件: ${id}`);
+    return this.findWithUploaderById(id);
   }
 
   async createWithUploader(
@@ -228,11 +231,13 @@ export class CalendarService {
     const uploaderAvatarUrl: string | null =
       userRows.length > 0 ? userRows[0].avatarUrl : null;
 
-    const rows: CalendarRow[] = await this.db
+    const id: string = randomUUID();
+    await this.db
       .insert(calendarEvents)
       .values({
+        id,
         title: dto.title,
-        eventDate: dto.eventDate,
+        eventDate: new Date(dto.eventDate),
         description: dto.description ?? null,
         hasCrown: dto.hasCrown ?? false,
         eventType: dto.eventType ?? 'anniversary',
@@ -240,18 +245,17 @@ export class CalendarService {
         uploaderName,
         uploaderAvatarUrl,
         sourceUrl: dto.sourceUrl ?? null,
-      })
-      .returning();
+      });
 
-    this.logger.log(`创建日历事件(用户上传): ${rows[0].id}, 用户: ${userId}`);
-    return this.findWithUploaderById(rows[0].id);
+    this.logger.log(`创建日历事件(用户上传): ${id}, 用户: ${userId}`);
+    return this.findWithUploaderById(id);
   }
 
   async update(id: string, dto: UpdateCalendarDto): Promise<CalendarEvent> {
     const patch: Partial<typeof calendarEvents.$inferInsert> = {};
 
     if (dto.title !== undefined) patch.title = dto.title;
-    if (dto.eventDate !== undefined) patch.eventDate = dto.eventDate;
+    if (dto.eventDate !== undefined) patch.eventDate = new Date(dto.eventDate);
     if (dto.description !== undefined) patch.description = dto.description ?? null;
     if (dto.hasCrown !== undefined) patch.hasCrown = dto.hasCrown;
     if (dto.eventType !== undefined) patch.eventType = dto.eventType;
@@ -261,13 +265,12 @@ export class CalendarService {
       throw new BadRequestException('未提供可更新字段');
     }
 
-    const rows: CalendarRow[] = await this.db
+    const result = await this.db
       .update(calendarEvents)
       .set(patch)
-      .where(eq(calendarEvents.id, id))
-      .returning();
+      .where(eq(calendarEvents.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('日历事件不存在');
     }
 
@@ -276,12 +279,11 @@ export class CalendarService {
   }
 
   async delete(id: string): Promise<void> {
-    const rows: { id: string }[] = await this.db
+    const result = await this.db
       .delete(calendarEvents)
-      .where(eq(calendarEvents.id, id))
-      .returning({ id: calendarEvents.id });
+      .where(eq(calendarEvents.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('日历事件不存在');
     }
 
@@ -293,22 +295,22 @@ export class CalendarService {
       return { items: [], createdCount: 0 };
     }
 
-    const values = dtos.map((dto: CreateCalendarDto) => ({
+    const ids: string[] = dtos.map(() => randomUUID());
+    const values = dtos.map((dto: CreateCalendarDto, index: number) => ({
+      id: ids[index],
       title: dto.title,
-      eventDate: dto.eventDate,
+      eventDate: new Date(dto.eventDate),
       description: dto.description ?? null,
       hasCrown: dto.hasCrown ?? false,
       eventType: dto.eventType ?? 'anniversary',
       sourceUrl: dto.sourceUrl ?? null,
     }));
 
-    const rows: CalendarRow[] = await this.db
+    await this.db
       .insert(calendarEvents)
-      .values(values)
-      .returning();
+      .values(values);
 
     // 批量创建后逐个 join 返回最新数据（数量通常不大）
-    const ids: string[] = rows.map((row: CalendarRow) => row.id);
     const joined = await this.db
       .select({
         event: calendarEvents,
@@ -321,7 +323,7 @@ export class CalendarService {
       .where(inArray(calendarEvents.id, ids));
 
     const items: CalendarEvent[] = joined.map((row: CalendarWithUploader) => this.mapJoinedRow(row));
-    this.logger.log(`批量创建日历事件: ${rows.length} 条`);
-    return { items, createdCount: rows.length };
+    this.logger.log(`批量创建日历事件: ${ids.length} 条`);
+    return { items, createdCount: ids.length };
   }
 }

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, count, and } from 'drizzle-orm';
 
 import { diaryEntries, siteUsers } from '@server/database/tables';
@@ -61,7 +61,7 @@ export class DiaryService {
   private readonly logger = new Logger(DiaryService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
     private readonly authService: AuthService,
   ) {}
 
@@ -79,7 +79,7 @@ export class DiaryService {
       title: row.title,
       content: row.content,
       weather: row.weather ?? 'sunny',
-      entryDate: row.entryDate,
+      entryDate: row.entryDate.toISOString().split('T')[0],
       illustrationUrl: row.illustrationUrl ?? undefined,
       status: row.status as 'published' | 'draft' | 'offline' | 'pending' | 'rejected',
       sortOrder: row.sortOrder ?? 0,
@@ -198,28 +198,29 @@ export class DiaryService {
   }
 
   async create(dto: CreateDiaryDto): Promise<DiaryEntry> {
-    const rows: DiaryRow[] = await this.db
+    const newId = crypto.randomUUID();
+    await this.db
       .insert(diaryEntries)
       .values({
+        id: newId,
         title: dto.title,
         content: dto.content,
         weather: dto.weather ?? 'sunny',
-        entryDate: dto.entryDate,
-         illustrationUrl: dto.illustrationUrl ?? null,
-         status: dto.status ?? 'published',
-         sortOrder: dto.sortOrder ?? 0,
-         author: dto.author ?? '',
-         sourcePlatform: dto.sourcePlatform ?? null,
-         sourceUrl: dto.sourceUrl ?? null,
-         completionStatus: dto.completionStatus ?? 'completed',
-         contentWarnings: dto.contentWarnings ?? [],
-         characterBackground: dto.characterBackground ?? null,
-         recommendationReason: dto.recommendationReason ?? null,
-       })
-       .returning();
+        entryDate: new Date(dto.entryDate),
+        illustrationUrl: dto.illustrationUrl ?? null,
+        status: dto.status ?? 'published',
+        sortOrder: dto.sortOrder ?? 0,
+        author: dto.author ?? '',
+        sourcePlatform: dto.sourcePlatform ?? null,
+        sourceUrl: dto.sourceUrl ?? null,
+        completionStatus: dto.completionStatus ?? 'completed',
+        contentWarnings: dto.contentWarnings ?? [],
+        characterBackground: dto.characterBackground ?? null,
+        recommendationReason: dto.recommendationReason ?? null,
+      });
 
-     this.logger.log(`创建日记: ${rows[0].id}`);
-    return this.findWithSubmitterById(rows[0].id);
+    this.logger.log(`创建日记: ${newId}`);
+    return this.findWithSubmitterById(newId);
   }
 
   async submit(
@@ -233,32 +234,33 @@ export class DiaryService {
       resolvedSubmitterName = await this.authService.getUserDisplayName(dto.submitterId);
     }
 
-    const rows: DiaryRow[] = await this.db
+    const newId = crypto.randomUUID();
+    await this.db
       .insert(diaryEntries)
       .values({
+        id: newId,
         title: dto.title,
         content: dto.content,
         weather: dto.weather ?? 'sunny',
-        entryDate: dto.entryDate,
-         illustrationUrl: dto.illustrationUrl ?? null,
-         status,
-         sortOrder: dto.sortOrder ?? 0,
-         author: dto.author ?? '',
-         sourcePlatform: dto.sourcePlatform ?? null,
-         sourceUrl: dto.sourceUrl ?? null,
-         completionStatus: dto.completionStatus ?? 'completed',
-         contentWarnings: dto.contentWarnings ?? [],
-         characterBackground: dto.characterBackground ?? null,
-         recommendationReason: dto.recommendationReason ?? null,
-         submitterId: dto.submitterId ?? null,
-         submitterName: resolvedSubmitterName,
-      })
-      .returning();
+        entryDate: new Date(dto.entryDate),
+        illustrationUrl: dto.illustrationUrl ?? null,
+        status,
+        sortOrder: dto.sortOrder ?? 0,
+        author: dto.author ?? '',
+        sourcePlatform: dto.sourcePlatform ?? null,
+        sourceUrl: dto.sourceUrl ?? null,
+        completionStatus: dto.completionStatus ?? 'completed',
+        contentWarnings: dto.contentWarnings ?? [],
+        characterBackground: dto.characterBackground ?? null,
+        recommendationReason: dto.recommendationReason ?? null,
+        submitterId: dto.submitterId ?? null,
+        submitterName: resolvedSubmitterName,
+      });
 
     this.logger.log(
-      `用户提交推文: ${rows[0].id}，角色=${dto.userRole || 'unknown'}，状态=${status}`,
+      `用户提交推文: ${newId}，角色=${dto.userRole || 'unknown'}，状态=${status}`,
     );
-    return this.findWithSubmitterById(rows[0].id);
+    return this.findWithSubmitterById(newId);
   }
 
   async update(id: string, dto: UpdateDiaryDto): Promise<DiaryEntry> {
@@ -267,7 +269,7 @@ export class DiaryService {
     if (dto.title !== undefined) patch.title = dto.title;
     if (dto.content !== undefined) patch.content = dto.content;
     if (dto.weather !== undefined) patch.weather = dto.weather;
-    if (dto.entryDate !== undefined) patch.entryDate = dto.entryDate;
+    if (dto.entryDate !== undefined) patch.entryDate = new Date(dto.entryDate);
     if (dto.illustrationUrl !== undefined) patch.illustrationUrl = dto.illustrationUrl ?? null;
     if (dto.status !== undefined) patch.status = dto.status;
     if (dto.sortOrder !== undefined) patch.sortOrder = dto.sortOrder;
@@ -283,13 +285,12 @@ export class DiaryService {
       throw new BadRequestException('未提供可更新字段');
     }
 
-    const rows: DiaryRow[] = await this.db
+    const result = await this.db
       .update(diaryEntries)
       .set(patch)
-      .where(eq(diaryEntries.id, id))
-      .returning();
+      .where(eq(diaryEntries.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('日记不存在');
     }
 
@@ -302,13 +303,12 @@ export class DiaryService {
       throw new BadRequestException('status 不能为空');
     }
 
-    const rows: DiaryRow[] = await this.db
+    const result = await this.db
       .update(diaryEntries)
       .set({ status })
-      .where(eq(diaryEntries.id, id))
-      .returning();
+      .where(eq(diaryEntries.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('日记不存在');
     }
 
@@ -321,17 +321,16 @@ export class DiaryService {
     status: 'published' | 'rejected',
     rejectReason?: string,
   ): Promise<DiaryEntry> {
-    const rows: DiaryRow[] = await this.db
+    const result = await this.db
       .update(diaryEntries)
       .set({
         status,
         rejectReason: status === 'rejected' ? (rejectReason ?? null) : null,
         reviewedAt: new Date(),
       })
-      .where(eq(diaryEntries.id, id))
-      .returning();
+      .where(eq(diaryEntries.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('推文不存在');
     }
 
@@ -340,12 +339,11 @@ export class DiaryService {
   }
 
   async delete(id: string): Promise<void> {
-    const rows: { id: string }[] = await this.db
+    const result = await this.db
       .delete(diaryEntries)
-      .where(eq(diaryEntries.id, id))
-      .returning({ id: diaryEntries.id });
+      .where(eq(diaryEntries.id, id));
 
-    if (rows.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('日记不存在');
     }
 

@@ -7,7 +7,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, and, or, like, count, desc, gte, type SQL } from 'drizzle-orm';
 import * as crypto from 'crypto';
 
@@ -72,7 +72,7 @@ export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
   constructor(
-    @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
+    @Inject(DRIZZLE_DATABASE) private readonly db: MySql2Database,
   ) {}
 
   // ===== 注册申请 =====
@@ -254,18 +254,23 @@ export class AdminService {
       throw new BadRequestException('角色非法');
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(siteUsers)
       .set({ role })
-      .where(eq(siteUsers.id, id))
-      .returning();
+      .where(eq(siteUsers.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('用户不存在');
     }
 
-    this.logger.log(`用户角色已更新: ${updated[0].username} -> ${role}`);
-    return mapSiteUser(updated[0]);
+    const users: SiteUserRow[] = await this.db
+      .select()
+      .from(siteUsers)
+      .where(eq(siteUsers.id, id))
+      .limit(1);
+
+    this.logger.log(`用户角色已更新: ${users[0].username} -> ${role}`);
+    return mapSiteUser(users[0]);
   }
 
   async updateUserStatus(id: string, status: string): Promise<SiteUser> {
@@ -273,18 +278,23 @@ export class AdminService {
       throw new BadRequestException('状态非法');
     }
 
-    const updated = await this.db
+    const result = await this.db
       .update(siteUsers)
       .set({ status })
-      .where(eq(siteUsers.id, id))
-      .returning();
+      .where(eq(siteUsers.id, id));
 
-    if (updated.length === 0) {
+    if (result[0].affectedRows === 0) {
       throw new NotFoundException('用户不存在');
     }
 
-    this.logger.log(`用户状态已更新: ${updated[0].username} -> ${status}`);
-    return mapSiteUser(updated[0]);
+    const users: SiteUserRow[] = await this.db
+      .select()
+      .from(siteUsers)
+      .where(eq(siteUsers.id, id))
+      .limit(1);
+
+    this.logger.log(`用户状态已更新: ${users[0].username} -> ${status}`);
+    return mapSiteUser(users[0]);
   }
 
   async resetUserPassword(id: string): Promise<{ newPassword: string }> {
