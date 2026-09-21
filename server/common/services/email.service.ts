@@ -16,7 +16,7 @@ export class EmailService {
   constructor() {
     this.resendApiKey = process.env.RESEND_API_KEY || undefined;
     this.fromEmail = process.env.EMAIL_FROM || 'no-reply@37line.com';
-    this.fromName = process.env.EMAIL_FROM_NAME || '37line 手帐日记';
+    this.fromName = process.env.EMAIL_FROM_NAME || '37line.fans';
   }
 
   isConfigured(): boolean {
@@ -76,7 +76,7 @@ export class EmailService {
           </p>
         </div>
         <p style="text-align: center; color: #6B4F3A; opacity: 0.6; font-size: 12px; margin-top: 24px;">
-          来自 37line 手帐日记
+          来自 37line.fans
         </p>
       </div>
     `;

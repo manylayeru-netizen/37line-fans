@@ -41,7 +41,7 @@ import Dashboard from './pages/admin/Dashboard';
 import CalendarManage from './pages/admin/CalendarManage';
 import CollectionManage from './pages/admin/CollectionManage';
 import GuestbookManage from './pages/admin/GuestbookManage';
-import LiteratureManage from './pages/admin/LiteratureManage';
+import TweetManage from './pages/admin/TweetManage';
 import CommentManage from './pages/admin/CommentManage';
 import TagManage from './pages/admin/TagManage';
 import UserManage from './pages/admin/UserManage';
@@ -149,19 +149,15 @@ const RoutesComponent = () => {
          <Route path="dailyfics/post" element={<PostDailyFicsPage />} />
         <Route path="calendar" element={<CalendarPage />} />
         <Route path="collection" element={<CollectionPage />} />
-        <Route path="guestbook" element={<GuestbookPage />} />
-        <Route path="literature" element={<LiteraturePage />} />
-        <Route path="literature/:id" element={<LiteratureDetailPage />} />
-        <Route path="literature/post" element={<PostLiteraturePage />} />
-        <Route path="settings" element={<AccountSettingsPage />} />
+         <Route path="guestbook" element={<GuestbookPage />} />
+         <Route path="settings" element={<AccountSettingsPage />} />
       </Route>
        <Route path="admin" element={<AdminLayout />}>
          <Route index element={<Dashboard />} />
-          <Route path="dailyfics" element={<DiaryManagePage />} />
+         <Route path="tweets" element={<TweetManage />} />
           <Route path="calendar" element={<CalendarManage />} />
          <Route path="collection" element={<CollectionManage />} />
          <Route path="guestbook" element={<GuestbookManage />} />
-         <Route path="literature" element={<LiteratureManage />} />
          <Route path="literature/comments" element={<CommentManage />} />
          <Route path="literature/tags" element={<TagManage />} />
          <Route path="users" element={<UserManage />} />

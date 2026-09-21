@@ -66,16 +66,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
       badge: stats.pendingGuestbookCount,
     },
     {
-      path: '/admin/dailyfics',
+      path: '/admin/tweets',
       label: '推文管理',
       icon: FileText,
-      badge: stats.pendingDiaryCount,
-    },
-    {
-      path: '/admin/literature',
-      label: '文学投稿',
-      icon: BookOpen,
-      badge: stats.pendingLiteratureCount,
+      badge: (stats.pendingDiaryCount ?? 0) + (stats.pendingLiteratureCount ?? 0),
     },
     { path: '/admin/users', label: '用户管理', icon: Users },
     {

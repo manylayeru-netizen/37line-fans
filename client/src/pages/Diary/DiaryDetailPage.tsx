@@ -67,10 +67,10 @@ const DiaryDetailPage: React.FC = () => {
           onClick={() => navigate('/dailyfics')}
           className="mb-8 inline-flex items-center gap-2 px-5 py-2 bg-paper rounded-full shadow-sm border-2 border-cocoa/10 font-handwriting text-lg text-cocoa hover:border-shiba hover:bg-shiba/10 transition card-wobble"
         >
-          ← 返回日记列表
+          ← 返回推文列表
         </button>
 
-        {loading && <LoadingSpinner text="正在翻开日记本..." />}
+        {loading && <LoadingSpinner text="正在加载推文详情..." />}
         {error && <ErrorState message={error} />}
 
         {!loading && !error && entry && (

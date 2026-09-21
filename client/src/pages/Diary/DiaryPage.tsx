@@ -72,7 +72,7 @@ const DiaryPage: React.FC = () => {
           </button>
         </div>
 
-        {loading && <LoadingSpinner text="正在翻开日记本..." />}
+        {loading && <LoadingSpinner text="正在加载推文..." />}
         {error && <ErrorState message={error} />}
 
         {!loading && !error && data && (

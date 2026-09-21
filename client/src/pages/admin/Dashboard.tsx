@@ -93,22 +93,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
 
   const pendingCards = [
     {
-      label: '每日推文',
-      count: stats.pendingDiaryCount ?? 0,
-      path: '/admin/dailyfics?status=pending',
-      icon: BookOpen,
+      label: '推文管理',
+      count: (stats.pendingDiaryCount ?? 0) + (stats.pendingLiteratureCount ?? 0),
+      path: '/admin/tweets',
+      icon: FileText,
       iconBg: 'bg-shiba/20',
       iconColor: 'text-shiba',
       tapeColor: 'bg-shiba',
-    },
-    {
-      label: '文学投稿',
-      count: stats.pendingLiteratureCount ?? 0,
-      path: '/admin/literature?status=pending',
-      icon: FileText,
-      iconBg: 'bg-tape-blue/40',
-      iconColor: 'text-tape-blue',
-      tapeColor: 'bg-tape-blue',
     },
     {
       label: '照片集',
@@ -156,8 +147,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
     },
     {
       label: '审核推文',
-      desc: '处理投稿审核',
-      path: '/admin/literature',
+      desc: '处理所有投稿推文',
+      path: '/admin/tweets',
       color: 'bg-shiba text-white',
       icon: FileText,
     },

@@ -20,17 +20,10 @@ interface SettingItemConfig {
 const settingItems: SettingItemConfig[] = [
   {
     key: 'diaryEnabled',
-    label: '每日推文投稿审核',
-    description: '开启后用户提交的每日推文需管理员审核',
+    label: '推文投稿审核',
+    description: '开启后用户提交的推文需管理员审核',
     iconBg: 'bg-shiba/20',
     iconColor: 'text-shiba',
-  },
-  {
-    key: 'literatureEnabled',
-    label: '文学投稿审核',
-    description: '开启后用户发布的文学帖子需管理员审核',
-    iconBg: 'bg-tape-blue/40',
-    iconColor: 'text-tape-blue',
   },
   {
     key: 'collectionEnabled',
@@ -78,15 +71,23 @@ const ReviewSettings: React.FC<ReviewSettingsProps> = () => {
   const handleToggle = async (key: keyof ReviewSettingsType) => {
     if (!settings) return;
     const newValue = !settings[key];
-    // Optimistic update
-    setSettings({ ...settings, [key]: newValue });
+    let newSettings = { ...settings, [key]: newValue };
+    if (key === 'diaryEnabled') {
+      newSettings.literatureEnabled = newValue;
+    }
+    setSettings(newSettings);
     setSavingKey(key);
     try {
       await adminApi.updateReviewSettings({ [key]: newValue });
+      if (key === 'diaryEnabled') {
+        await adminApi.updateReviewSettings({ literatureEnabled: newValue });
+      }
       toast.success(`${settingItems.find((i) => i.key === key)?.label}已${newValue ? '开启' : '关闭'}`);
     } catch {
-      // Revert on error
       setSettings({ ...settings, [key]: !newValue });
+      if (key === 'diaryEnabled') {
+        setSettings((prev) => ({ ...prev, literatureEnabled: !newValue }));
+      }
       toast.error('保存失败，请重试');
     } finally {
       setSavingKey(null);
@@ -96,7 +97,6 @@ const ReviewSettings: React.FC<ReviewSettingsProps> = () => {
   const allDisabled =
     settings &&
     !settings.diaryEnabled &&
-    !settings.literatureEnabled &&
     !settings.collectionEnabled &&
     !settings.calendarEnabled &&
     !settings.guestbookEnabled;
