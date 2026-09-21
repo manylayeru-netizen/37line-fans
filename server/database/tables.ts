@@ -234,8 +234,13 @@ export const collectionCards = mysqlTable('collection_cards', {
   description: text('description'),
   imageUrl: text('image_url').notNull(),
   category: varchar('category', { length: 100 }).default('photocard'),
+  status: varchar('status', { length: 20 }).notNull().default('published'),
   sortOrder: int('sort_order').default(0),
   rotationDegree: int('rotation_degree').default(0),
+  thumbX: int('thumb_x'),
+  thumbY: int('thumb_y'),
+  thumbW: int('thumb_w'),
+  thumbH: int('thumb_h'),
   uploaderId: uuid('uploader_id'),
   uploaderName: varchar('uploader_name', { length: 100 }),
   uploaderAvatarUrl: text('uploader_avatar_url'),
@@ -247,6 +252,7 @@ export const collectionCards = mysqlTable('collection_cards', {
     .default(sql`CURRENT_TIMESTAMP(3)`),
 }, (table) => [
   index('cc_category_idx').on(table.category),
+  index('cc_status_idx').on(table.status),
   index('cc_sort_idx').on(table.sortOrder),
   index('cc_uploader_idx').on(table.uploaderId),
 ]);
@@ -260,6 +266,7 @@ export const calendarEvents = mysqlTable('calendar_events', {
   description: text('description'),
   hasCrown: boolean('has_crown').default(false),
   eventType: varchar('event_type', { length: 50 }).default('anniversary'),
+  status: varchar('status', { length: 20 }).notNull().default('published'),
   uploaderId: uuid('uploader_id'),
   uploaderName: varchar('uploader_name', { length: 100 }),
   uploaderAvatarUrl: text('uploader_avatar_url'),
@@ -272,6 +279,7 @@ export const calendarEvents = mysqlTable('calendar_events', {
     .default(sql`CURRENT_TIMESTAMP(3)`),
 }, (table) => [
   index('ce_date_idx').on(table.eventDate),
+  index('ce_status_idx').on(table.status),
   index('ce_uploader_idx').on(table.uploaderId),
 ]);
 
@@ -328,6 +336,20 @@ export const emailVerificationCodes = mysqlTable('email_verification_codes', {
   index('evc_email_idx').on(table.email),
   index('evc_email_purpose_idx').on(table.email, table.purpose),
 ]);
+
+// === 审核设置 ===
+
+export const reviewSettings = mysqlTable('review_settings', {
+  id: int('id').primaryKey().default(1),
+  diaryEnabled: boolean('diary_enabled').notNull().default(true),
+  literatureEnabled: boolean('literature_enabled').notNull().default(true),
+  collectionEnabled: boolean('collection_enabled').notNull().default(true),
+  calendarEnabled: boolean('calendar_enabled').notNull().default(true),
+  guestbookEnabled: boolean('guestbook_enabled').notNull().default(true),
+  updatedAt: customTimestamp('_updated_at', { precision: 3 })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+});
 
 // table aliases
 export const calendarEventsTable = calendarEvents;

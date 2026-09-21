@@ -3,7 +3,7 @@ import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, count, and } from 'drizzle-orm';
 
-import { diaryEntries, siteUsers } from '@server/database/tables';
+import { diaryEntries, siteUsers, reviewSettings } from '@server/database/tables';
 
 interface DiaryWithSubmitter {
   entry: typeof diaryEntries.$inferSelect;
@@ -124,6 +124,32 @@ export class DiaryService {
     return this.toDto(row.entry, submitter);
   }
 
+  private async getReviewEnabled(
+    module: 'diary' | 'literature' | 'collection' | 'calendar' | 'guestbook',
+  ): Promise<boolean> {
+    const rows = await this.db
+      .select()
+      .from(reviewSettings)
+      .where(eq(reviewSettings.id, 1))
+      .limit(1);
+    if (rows.length === 0) return true;
+    const row = rows[0];
+    switch (module) {
+      case 'diary':
+        return row.diaryEnabled;
+      case 'literature':
+        return row.literatureEnabled;
+      case 'collection':
+        return row.collectionEnabled;
+      case 'calendar':
+        return row.calendarEnabled;
+      case 'guestbook':
+        return row.guestbookEnabled;
+      default:
+        return true;
+    }
+  }
+
   private mapJoinedRow(row: DiaryWithSubmitter): DiaryEntry {
     const submitter = row.submitter_username != null
       ? { username: row.submitter_username, displayName: row.submitter_display_name, avatarUrl: row.submitter_avatar_url }
@@ -228,7 +254,13 @@ export class DiaryService {
     dto: CreateDiaryDto & { submitterId?: string; submitterName?: string; userRole?: string },
   ): Promise<DiaryEntry> {
     const isAdmin: boolean = dto.userRole === 'admin';
-    const status: 'published' | 'pending' = isAdmin ? 'published' : 'pending';
+    let status: 'published' | 'pending';
+    if (isAdmin) {
+      status = 'published';
+    } else {
+      const reviewEnabled = await this.getReviewEnabled('diary');
+      status = reviewEnabled ? 'pending' : 'published';
+    }
 
     let resolvedSubmitterName: string | null = null;
     if (dto.submitterId) {

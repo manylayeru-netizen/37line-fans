@@ -11,6 +11,7 @@ import {
   Loader2,
   Check,
   ChevronsUpDown,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -42,6 +43,9 @@ import { collectionApi } from '@client/src/api';
 import { uploadImage } from '@client/src/utils/upload';
 import type { CollectionCard } from '@shared/api.interface';
 import { Image } from '@client/src/components/ui/image';
+import ThumbImage from '@client/src/components/ui/thumb-image';
+import ImageCropper from './ImageCropper';
+import type { CropValues } from './ImageCropper';
 
 const PRESET_CATEGORIES: string[] = [
   '官图',
@@ -65,6 +69,7 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
   const [page, setPage] = useState<number>(1);
   const [pageSize] = useState<number>(12);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categories, setCategories] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -77,6 +82,10 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
     category: '',
     sortOrder: 0,
     rotationDegree: 0,
+    thumbX: 0,
+    thumbY: 0,
+    thumbW: 100,
+    thumbH: 100,
   });
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -99,6 +108,7 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
         page,
         pageSize,
         category: categoryFilter === 'all' ? undefined : categoryFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
       });
       setItems(data.items);
       setTotal(data.total);
@@ -107,12 +117,37 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, categoryFilter]);
+  }, [page, pageSize, categoryFilter, statusFilter]);
 
   useEffect(() => {
     fetchCategories();
     fetchList();
   }, [fetchCategories, fetchList]);
+
+  const handleReview = async (id: string, status: 'published' | 'rejected') => {
+    try {
+      await collectionApi.reviewCollectionCard(id, status);
+      toast.success(status === 'published' ? '已通过审核 ✅' : '已拒绝 ❌');
+      fetchList();
+    } catch (err: unknown) {
+      let msg = '操作失败，请重试';
+      if (err && typeof err === 'object') {
+        const e = err as {
+          response?: { data?: { error?: { message?: string }; message?: string } };
+          message?: string;
+        };
+        const errData = e.response?.data;
+        if (errData?.error?.message) {
+          msg = errData.error.message;
+        } else if (errData?.message) {
+          msg = errData.message;
+        } else if (e.message) {
+          msg = e.message;
+        }
+      }
+      toast.error(msg);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -125,6 +160,10 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
       category: categories[0] || '',
       sortOrder: 0,
       rotationDegree: 0,
+      thumbX: 0,
+      thumbY: 0,
+      thumbW: 100,
+      thumbH: 100,
     });
     setDialogOpen(true);
   };
@@ -138,6 +177,10 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
       category: card.category,
       sortOrder: card.sortOrder,
       rotationDegree: card.rotationDegree,
+      thumbX: card.thumbX ?? 0,
+      thumbY: card.thumbY ?? 0,
+      thumbW: card.thumbW ?? 100,
+      thumbH: card.thumbH ?? 100,
     });
     setDialogOpen(true);
   };
@@ -154,7 +197,14 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
     setUploadingImage(true);
     try {
       const url = await uploadImage(file, 'collection');
-      setForm((f) => ({ ...f, imageUrl: url }));
+      setForm((f) => ({
+        ...f,
+        imageUrl: url,
+        thumbX: 10,
+        thumbY: 10,
+        thumbW: 80,
+        thumbH: 80,
+      }));
       toast.success('图片上传成功');
     } catch (err: unknown) {
       const msg =
@@ -184,6 +234,10 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
       category: form.category.trim() || undefined,
       sortOrder: parseInt(String(form.sortOrder), 10) || 0,
       rotationDegree: parseInt(String(form.rotationDegree), 10) || 0,
+      thumbX: form.thumbX,
+      thumbY: form.thumbY,
+      thumbW: form.thumbW,
+      thumbH: form.thumbH,
     };
 
     try {
@@ -295,6 +349,25 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
           className="absolute -top-3 left-6 w-16 h-5 bg-tape-pink opacity-70 rounded-sm"
           style={{ transform: 'rotate(-3deg)' }}
         />
+        <div className="flex items-center gap-3 flex-wrap mb-3">
+          <span className="text-sm text-cocoa/70 font-medium">状态：</span>
+          {(['all', 'pending', 'published', 'rejected'] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => {
+                setStatusFilter(s);
+                setPage(1);
+              }}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                statusFilter === s
+                  ? 'bg-penguin text-white shadow-md'
+                  : 'bg-cream text-cocoa hover:bg-penguin/20'
+              }`}
+            >
+              {s === 'all' ? '全部' : s === 'pending' ? '待审核' : s === 'published' ? '已发布' : '已拒绝'}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm text-cocoa/70 font-medium">分类：</span>
           <button
@@ -357,15 +430,7 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
                   {/* Polaroid frame */}
                   <div className="bg-white p-2 pb-10 rounded shadow-md card-wobble relative">
                     <div className="aspect-square bg-grid/30 rounded overflow-hidden">
-                      <Image
-                        src={card.imageUrl}
-                        alt={card.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23E8DDD0" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%236B4F3A" font-size="10">No Image</text></svg>';
-                        }}
-                      />
+                      <ThumbImage card={card} className="w-full h-full" />
                     </div>
                     <div className="absolute bottom-1 left-0 right-0 px-2 text-center">
                       <p
@@ -458,10 +523,13 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
                   <th className="text-left px-4 py-3 font-medium text-ink w-24">
                     分类
                   </th>
+                  <th className="text-left px-4 py-3 font-medium text-ink w-20">
+                    状态
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-ink w-16">
                     排序
                   </th>
-                  <th className="text-right px-4 py-3 font-medium text-ink w-36">
+                  <th className="text-right px-4 py-3 font-medium text-ink w-44">
                     操作
                   </th>
                 </tr>
@@ -469,23 +537,23 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
               <tbody>
                 {loading && (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-cocoa/50"
-                    >
-                      加载中...
-                    </td>
-                  </tr>
-                )}
-                {!loading && items.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-cocoa/50"
-                    >
-                      还没有卡片~
-                    </td>
-                  </tr>
+                      <td
+                        colSpan={6}
+                        className="text-center py-12 text-cocoa/50"
+                      >
+                        加载中...
+                      </td>
+                    </tr>
+                  )}
+                  {!loading && items.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="text-center py-12 text-cocoa/50"
+                      >
+                        还没有卡片~
+                      </td>
+                    </tr>
                 )}
                 {!loading &&
                   items.map((card) => (
@@ -495,11 +563,7 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
                     >
                       <td className="px-4 py-2">
                         <div className="w-10 h-10 rounded overflow-hidden bg-grid/30">
-                          <Image
-                            src={card.imageUrl}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
+                          <ThumbImage card={card} />
                         </div>
                       </td>
                       <td className="px-4 py-3 text-ink font-medium">
@@ -507,32 +571,60 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
                       </td>
                       <td className="px-4 py-3">
                         <Badge
-                          className="bg-tape-pink text-ink rounded-full border-0"
+                          className={`rounded-full border-0 text-[10px] ${
+                            card.status === 'published'
+                              ? 'bg-mint text-ink'
+                              : card.status === 'pending'
+                                ? 'bg-tape-pink text-ink'
+                                : 'bg-destructive/20 text-destructive'
+                          }`}
                           style={{ fontFamily: 'var(--font-handwriting)' }}
                         >
-                          {card.category}
+                          {card.status === 'published'
+                            ? '已发布'
+                            : card.status === 'pending'
+                              ? '待审核'
+                              : '已拒绝'}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-cocoa/70">
                         {card.sortOrder}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openEdit(card)}
-                            className="p-2 rounded-full hover:bg-penguin/20 text-penguin transition-colors"
-                            title="编辑"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(card.id)}
-                            className="p-2 rounded-full hover:bg-destructive/20 text-destructive transition-colors"
-                            title="删除"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                          <div className="flex items-center justify-end gap-1">
+                            {card.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={() => handleReview(card.id, 'published')}
+                                  className="p-2 rounded-full hover:bg-mint/40 text-emerald-600 transition-colors"
+                                  title="通过审核"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleReview(card.id, 'rejected')}
+                                  className="p-2 rounded-full hover:bg-destructive/20 text-destructive transition-colors"
+                                  title="拒绝"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => openEdit(card)}
+                              className="p-2 rounded-full hover:bg-penguin/20 text-penguin transition-colors"
+                              title="编辑"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteId(card.id)}
+                              className="p-2 rounded-full hover:bg-destructive/20 text-destructive transition-colors"
+                              title="删除"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                       </td>
                     </tr>
                   ))}
@@ -641,15 +733,34 @@ const CollectionManage: React.FC<CollectionManageProps> = () => {
                   onChange={handleImageFileChange}
                 />
               {form.imageUrl && (
-                <div className="mt-2 w-24 h-24 rounded overflow-hidden bg-grid/30 border-2 border-dashed border-grid">
-                  <Image
-                    src={form.imageUrl}
-                    alt="预览"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-cocoa mb-2">
+                    缩略图裁剪
+                    <span className="text-xs text-cocoa/60 ml-2">
+                      拖动选框移动位置，拖角点缩放（保持 1:1）
+                    </span>
+                  </label>
+                  <div className="flex justify-center">
+                    <ImageCropper
+                      imageUrl={form.imageUrl}
+                      value={{
+                        thumbX: form.thumbX,
+                        thumbY: form.thumbY,
+                        thumbW: form.thumbW,
+                        thumbH: form.thumbH,
+                      }}
+                      onChange={(v: CropValues) =>
+                        setForm((f) => ({
+                          ...f,
+                          thumbX: v.thumbX,
+                          thumbY: v.thumbY,
+                          thumbW: v.thumbW,
+                          thumbH: v.thumbH,
+                        }))
+                      }
+                      maxWidth={360}
+                    />
+                  </div>
                 </div>
               )}
             </div>

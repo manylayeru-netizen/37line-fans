@@ -239,3 +239,31 @@ CREATE TABLE IF NOT EXISTS `email_verification_codes` (
 -- - 外键使用 SET NULL / CASCADE，与原 PG 语义一致
 -- - 排序规则 utf8mb4_unicode_ci 大小写不敏感，like 查询天然不区分大小写（无需 ilike）
 -- ============================================================
+
+-- ============================================================
+-- Migration 4: 审核开关 + 照片集缩略图裁剪 + 日历审核状态
+-- ============================================================
+-- 审核开关配置表（单行，id=1 固定）
+CREATE TABLE IF NOT EXISTS review_settings (
+  id INT PRIMARY KEY DEFAULT 1,
+  diary_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  literature_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  collection_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  calendar_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  guestbook_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+  CONSTRAINT one_row_only CHECK (id = 1)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO review_settings (id) VALUES (1);
+
+-- 收集册卡片：审核状态 + 缩略图裁剪参数（百分比 0-100）
+ALTER TABLE collection_cards ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'published';
+ALTER TABLE collection_cards ADD COLUMN IF NOT EXISTS thumb_x INT DEFAULT 25;
+ALTER TABLE collection_cards ADD COLUMN IF NOT EXISTS thumb_y INT DEFAULT 25;
+ALTER TABLE collection_cards ADD COLUMN IF NOT EXISTS thumb_w INT DEFAULT 50;
+ALTER TABLE collection_cards ADD COLUMN IF NOT EXISTS thumb_h INT DEFAULT 50;
+CREATE INDEX IF NOT EXISTS idx_collection_status ON collection_cards(status);
+
+-- 日历事件：审核状态
+ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'published';
+CREATE INDEX IF NOT EXISTS idx_calendar_status ON calendar_events(status);

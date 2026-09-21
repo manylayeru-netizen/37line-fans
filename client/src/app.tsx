@@ -46,6 +46,7 @@ import CommentManage from './pages/admin/CommentManage';
 import TagManage from './pages/admin/TagManage';
 import UserManage from './pages/admin/UserManage';
 import ApplicationManage from './pages/admin/ApplicationManage';
+import ReviewSettings from './pages/admin/ReviewSettings';
 import AccountSettingsPage from './pages/Settings/AccountSettingsPage';
 
 const PLATFORM_BADGE_KEYWORDS = [
@@ -164,7 +165,8 @@ const RoutesComponent = () => {
          <Route path="literature/comments" element={<CommentManage />} />
          <Route path="literature/tags" element={<TagManage />} />
          <Route path="users" element={<UserManage />} />
-         <Route path="applications" element={<ApplicationManage />} />
+          <Route path="applications" element={<ApplicationManage />} />
+          <Route path="settings/review" element={<ReviewSettings />} />
        </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>

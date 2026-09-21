@@ -4,12 +4,39 @@ import {
   apiPut,
   apiDelete,
 } from '@client/src/utils/api-client';
-import type { CalendarEvent } from '@shared/api.interface';
+import type {
+  CalendarEvent,
+  PagedResponse,
+} from '@shared/api.interface';
 
 export async function getCalendarList(year?: number): Promise<CalendarEvent[]> {
   const res = await apiGet<{ data: CalendarEvent[] }>('/api/calendar', {
     year,
   });
+  return res.data;
+}
+
+export async function getAdminCalendarList(params: {
+  year?: number;
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}): Promise<PagedResponse<CalendarEvent>> {
+  const res = await apiGet<{ data: PagedResponse<CalendarEvent> }>(
+    '/api/calendar/admin/events',
+    params,
+  );
+  return res.data;
+}
+
+export async function reviewCalendarEvent(
+  id: string,
+  status: 'published' | 'rejected',
+): Promise<CalendarEvent> {
+  const res = await apiPost<{ data: CalendarEvent }>(
+    `/api/calendar/admin/events/${id}/review`,
+    { status },
+  );
   return res.data;
 }
 

@@ -67,6 +67,15 @@ const entryCards: EntryCardData[] = [
 
 const upcomingDates: { date: string; title: string; isCrown: boolean }[] = [];
 
+function getThumbPosition(card: { thumbX?: number; thumbY?: number; thumbW?: number; thumbH?: number }): string {
+  if (card.thumbW !== undefined && card.thumbW > 0 && card.thumbX !== undefined && card.thumbY !== undefined) {
+    const cx = card.thumbX + card.thumbW / 2;
+    const cy = card.thumbY + (card.thumbH ?? card.thumbW) / 2;
+    return `${cx}% ${cy}%`;
+  }
+  return 'center';
+}
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [latestDiaries, setLatestDiaries] = useState<DiaryEntry[]>([]);
@@ -491,13 +500,13 @@ const HomePage: React.FC = () => {
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
                 className="flex-shrink-0"
               >
-                <PolaroidFrame title={item.title} rotation={item.rotationDegree}>
+                 <PolaroidFrame title={item.title} rotation={item.rotationDegree}>
                    <div
                      className="w-28 h-32 sm:w-36 sm:h-44 md:w-40 md:h-48 bg-gradient-to-br from-cream to-mint/30 flex items-center justify-center"
                      style={{
                        backgroundImage: `url(${item.imageUrl})`,
                        backgroundSize: 'cover',
-                       backgroundPosition: 'center',
+                       backgroundPosition: getThumbPosition(item),
                      }}
                    />
                 </PolaroidFrame>

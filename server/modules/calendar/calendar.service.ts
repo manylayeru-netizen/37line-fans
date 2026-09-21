@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { MySql2Database } from 'drizzle-orm/mysql2';
-import { eq, asc, sql, gte, and, inArray } from 'drizzle-orm';
+import { eq, asc, sql, gte, and, inArray, count, lt } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
 import { calendarEvents, siteUsers } from '@server/database/tables';
@@ -12,7 +12,7 @@ interface CalendarWithUploader {
   uploader_display_name: string | null;
   uploader_avatar_url: string | null;
 }
-import type { CalendarEvent } from '@shared/api.interface';
+import type { CalendarEvent, PagedResponse } from '@shared/api.interface';
 import { AuthService } from '@server/modules/auth/auth.service';
 import { toDateStringRequired, getTime } from '@server/common/utils/date';
 
@@ -35,6 +35,20 @@ interface UpdateCalendarDto {
 }
 
 type CalendarRow = typeof calendarEvents.$inferSelect;
+
+interface CalendarListRow {
+  id: string;
+  title: string;
+  eventDate: Date | string;
+  hasCrown: boolean | null;
+  eventType: string | null;
+  status: string;
+  uploaderId: string | null;
+  sourceUrl: string | null;
+  uploader_username: string | null;
+  uploader_display_name: string | null;
+  uploader_avatar_url: string | null;
+}
 
 @Injectable()
 export class CalendarService {
@@ -61,6 +75,27 @@ export class CalendarService {
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
+      status: row.status as 'published' | 'pending' | 'rejected',
+      uploaderId: row.uploaderId ?? undefined,
+      uploaderName: resolvedName,
+      uploaderAvatarUrl: resolvedAvatar,
+      sourceUrl: row.sourceUrl ?? undefined,
+    };
+  }
+
+  private mapListRow(row: CalendarListRow): CalendarEvent {
+    const resolvedName: string | undefined = row.uploader_username != null
+      ? (row.uploader_display_name ?? row.uploader_username ?? undefined)
+      : undefined;
+    const resolvedAvatar: string | undefined = row.uploader_avatar_url ?? undefined;
+
+    return {
+      id: row.id,
+      title: row.title,
+      eventDate: toDateStringRequired(row.eventDate),
+      hasCrown: row.hasCrown ?? false,
+      eventType: row.eventType ?? 'anniversary',
+      status: row.status as 'published' | 'pending' | 'rejected',
       uploaderId: row.uploaderId ?? undefined,
       uploaderName: resolvedName,
       uploaderAvatarUrl: resolvedAvatar,
@@ -77,6 +112,7 @@ export class CalendarService {
         description: calendarEvents.description,
         hasCrown: calendarEvents.hasCrown,
         eventType: calendarEvents.eventType,
+        status: calendarEvents.status,
         uploaderId: calendarEvents.uploaderId,
         sourceUrl: calendarEvents.sourceUrl,
         createdAt: calendarEvents.createdAt,
@@ -105,6 +141,7 @@ export class CalendarService {
       description: row.description ?? undefined,
       hasCrown: row.hasCrown ?? false,
       eventType: row.eventType ?? 'anniversary',
+      status: row.status as 'published' | 'pending' | 'rejected',
       uploaderId: row.uploaderId ?? undefined,
       uploaderName: resolvedName,
       uploaderAvatarUrl: resolvedAvatar,
@@ -119,34 +156,75 @@ export class CalendarService {
     return this.toDto(row.event, uploader);
   }
 
-  async getList(year?: string): Promise<CalendarEvent[]> {
-    const baseSelect = this.db
+  async getList(params: {
+    year?: number;
+    page: number;
+    pageSize: number;
+    status?: string;
+  }): Promise<PagedResponse<CalendarEvent>> {
+    const { year, page, pageSize, status } = params;
+
+    const conditions = [];
+
+    if (year !== undefined) {
+      const startDate: string = `${year}-01-01`;
+      const endDate: string = `${year + 1}-01-01`;
+      conditions.push(sql`${calendarEvents.eventDate} >= ${startDate}`);
+      conditions.push(sql`${calendarEvents.eventDate} < ${endDate}`);
+    }
+
+    if (status && status !== 'all') {
+      conditions.push(eq(calendarEvents.status, status));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const baseQuery = this.db
       .select({
-        event: calendarEvents,
+        id: calendarEvents.id,
+        title: calendarEvents.title,
+        eventDate: calendarEvents.eventDate,
+        hasCrown: calendarEvents.hasCrown,
+        eventType: calendarEvents.eventType,
+        status: calendarEvents.status,
+        uploaderId: calendarEvents.uploaderId,
+        sourceUrl: calendarEvents.sourceUrl,
         uploader_username: siteUsers.username,
         uploader_display_name: siteUsers.displayName,
         uploader_avatar_url: siteUsers.avatarUrl,
       })
       .from(calendarEvents)
-      .leftJoin(siteUsers, eq(calendarEvents.uploaderId, siteUsers.id));
+      .leftJoin(siteUsers, eq(calendarEvents.uploaderId, siteUsers.id))
+      .$dynamic();
 
-    const rows: CalendarWithUploader[] = year
-      ? await baseSelect
-          .where(
-            and(
-              gte(calendarEvents.eventDate, new Date(`${year}-01-01`)),
-              sql`${calendarEvents.eventDate} < ${new Date(`${Number(year) + 1}-01-01`).toISOString()}`,
-            ),
-          )
-          .orderBy(asc(calendarEvents.eventDate))
-      : await baseSelect.orderBy(asc(calendarEvents.eventDate));
+    const countQuery = this.db
+      .select({ total: count() })
+      .from(calendarEvents)
+      .$dynamic();
 
-    return rows.map((row: CalendarWithUploader) => this.mapJoinedRow(row));
+    if (whereClause) {
+      baseQuery.where(whereClause);
+      countQuery.where(whereClause);
+    }
+
+    const offset: number = (page - 1) * pageSize;
+    baseQuery
+      .orderBy(asc(calendarEvents.eventDate))
+      .limit(pageSize)
+      .offset(offset);
+
+    const [rows, countResult] = await Promise.all([baseQuery, countQuery]);
+
+    const items: CalendarEvent[] = (rows as CalendarListRow[]).map((row: CalendarListRow) =>
+      this.mapListRow(row),
+    );
+    const total: number = countResult[0]?.total ?? 0;
+
+    return { items, total, page, pageSize };
   }
 
   async getUpcoming(limit: number = 5): Promise<CalendarEvent[]> {
     const todayStr: string = new Date().toISOString().split('T')[0];
-    const today: Date = new Date(todayStr);
 
     const futureRows: CalendarWithUploader[] = await this.db
       .select({
@@ -157,7 +235,7 @@ export class CalendarService {
       })
       .from(calendarEvents)
       .leftJoin(siteUsers, eq(calendarEvents.uploaderId, siteUsers.id))
-      .where(gte(calendarEvents.eventDate, today))
+      .where(and(sql`${calendarEvents.eventDate} >= ${todayStr}`, eq(calendarEvents.status, 'published')))
       .orderBy(asc(calendarEvents.eventDate))
       .limit(limit);
 
@@ -176,7 +254,7 @@ export class CalendarService {
       })
       .from(calendarEvents)
       .leftJoin(siteUsers, eq(calendarEvents.uploaderId, siteUsers.id))
-      .where(sql`${calendarEvents.eventDate} < ${today.toISOString()}`)
+      .where(and(sql`${calendarEvents.eventDate} < ${todayStr}`, eq(calendarEvents.status, 'published')))
       .orderBy(sql`${calendarEvents.eventDate} DESC`)
       .limit(remaining);
 
@@ -213,6 +291,8 @@ export class CalendarService {
   async createWithUploader(
     dto: CreateCalendarDto,
     userId: string,
+    isAdmin: boolean,
+    reviewEnabled: boolean,
   ): Promise<CalendarEvent> {
     const userRows: { username: string; displayName: string | null; avatarUrl: string | null }[] =
       await this.db
@@ -231,6 +311,12 @@ export class CalendarService {
     const uploaderAvatarUrl: string | null =
       userRows.length > 0 ? userRows[0].avatarUrl : null;
 
+    const eventStatus: 'published' | 'pending' = isAdmin
+      ? 'published'
+      : reviewEnabled
+        ? 'pending'
+        : 'published';
+
     const id: string = randomUUID();
     await this.db
       .insert(calendarEvents)
@@ -245,9 +331,27 @@ export class CalendarService {
         uploaderName,
         uploaderAvatarUrl,
         sourceUrl: dto.sourceUrl ?? null,
+        status: eventStatus,
       });
 
-    this.logger.log(`创建日历事件(用户上传): ${id}, 用户: ${userId}`);
+    this.logger.log(`创建日历事件(用户上传): ${id}, 用户: ${userId}, 状态: ${eventStatus}`);
+    return this.findWithUploaderById(id);
+  }
+
+  async reviewEvent(
+    id: string,
+    status: 'published' | 'rejected',
+  ): Promise<CalendarEvent> {
+    const result = await this.db
+      .update(calendarEvents)
+      .set({ status })
+      .where(eq(calendarEvents.id, id));
+
+    if (result[0].affectedRows === 0) {
+      throw new NotFoundException('日历事件不存在');
+    }
+
+    this.logger.log(`审核日历事件: ${id}, 状态: ${status}`);
     return this.findWithUploaderById(id);
   }
 

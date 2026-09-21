@@ -16,6 +16,10 @@ import {
   registerApplications,
   guestbookNotes,
   literaturePosts,
+  diaryEntries,
+  collectionCards,
+  calendarEvents,
+  reviewSettings,
 } from '@server/database/tables';
 import type {
   SiteUser,
@@ -23,6 +27,7 @@ import type {
   PagedResponse,
   ReviewApplicationRequest,
   AdminStats,
+  ReviewSettings,
 } from '@shared/api.interface';
 import { hashPassword } from '../auth/auth.service';
 import { toIsoString, toIsoStringRequired } from '@server/common/utils/date';
@@ -337,6 +342,10 @@ export class AdminService {
       pendingGuestbookResult,
       publishedLitResult,
       pendingLitResult,
+      pendingDiaryResult,
+      pendingCollectionResult,
+      pendingCalendarResult,
+      settingsResult,
     ] = await Promise.all([
       this.db.select({ count: count() }).from(siteUsers),
       this.db
@@ -368,6 +377,19 @@ export class AdminService {
         .select({ count: count() })
         .from(literaturePosts)
         .where(eq(literaturePosts.status, 'pending')),
+      this.db
+        .select({ count: count() })
+        .from(diaryEntries)
+        .where(eq(diaryEntries.status, 'pending')),
+      this.db
+        .select({ count: count() })
+        .from(collectionCards)
+        .where(eq(collectionCards.status, 'pending')),
+      this.db
+        .select({ count: count() })
+        .from(calendarEvents)
+        .where(eq(calendarEvents.status, 'pending')),
+      this.getReviewSettings(),
     ]);
 
     return {
@@ -380,6 +402,81 @@ export class AdminService {
       pendingGuestbookCount: Number(pendingGuestbookResult[0]?.count ?? 0),
       publishedLiteratureCount: Number(publishedLitResult[0]?.count ?? 0),
       pendingLiteratureCount: Number(pendingLitResult[0]?.count ?? 0),
+      pendingDiaryCount: Number(pendingDiaryResult[0]?.count ?? 0),
+      pendingCollectionCount: Number(pendingCollectionResult[0]?.count ?? 0),
+      pendingCalendarCount: Number(pendingCalendarResult[0]?.count ?? 0),
+      reviewSettings: settingsResult,
     };
+  }
+
+  // ===== 审核设置 =====
+
+  async getReviewSettings(): Promise<ReviewSettings> {
+    const rows = await this.db
+      .select()
+      .from(reviewSettings)
+      .where(eq(reviewSettings.id, 1))
+      .limit(1);
+
+    if (rows.length === 0) {
+      await this.db.insert(reviewSettings).values({
+        id: 1,
+        diaryEnabled: true,
+        literatureEnabled: true,
+        collectionEnabled: true,
+        calendarEnabled: true,
+        guestbookEnabled: true,
+      });
+      return {
+        diaryEnabled: true,
+        literatureEnabled: true,
+        collectionEnabled: true,
+        calendarEnabled: true,
+        guestbookEnabled: true,
+      };
+    }
+
+    const row = rows[0];
+    return {
+      diaryEnabled: Boolean(row.diaryEnabled),
+      literatureEnabled: Boolean(row.literatureEnabled),
+      collectionEnabled: Boolean(row.collectionEnabled),
+      calendarEnabled: Boolean(row.calendarEnabled),
+      guestbookEnabled: Boolean(row.guestbookEnabled),
+    };
+  }
+
+  async updateReviewSettings(
+    updates: Partial<ReviewSettings>,
+  ): Promise<ReviewSettings> {
+    const patch: Record<string, boolean> = {};
+    if (updates.diaryEnabled !== undefined) patch.diaryEnabled = updates.diaryEnabled;
+    if (updates.literatureEnabled !== undefined) patch.literatureEnabled = updates.literatureEnabled;
+    if (updates.collectionEnabled !== undefined) patch.collectionEnabled = updates.collectionEnabled;
+    if (updates.calendarEnabled !== undefined) patch.calendarEnabled = updates.calendarEnabled;
+    if (updates.guestbookEnabled !== undefined) patch.guestbookEnabled = updates.guestbookEnabled;
+
+    if (Object.keys(patch).length === 0) {
+      return this.getReviewSettings();
+    }
+
+    const allDefaults = {
+      diaryEnabled: true,
+      literatureEnabled: true,
+      collectionEnabled: true,
+      calendarEnabled: true,
+      guestbookEnabled: true,
+    };
+
+    await this.db
+      .insert(reviewSettings)
+      .values({
+        id: 1,
+        ...allDefaults,
+        ...patch,
+      })
+      .onDuplicateKeyUpdate({ set: patch });
+
+    return this.getReviewSettings();
   }
 }

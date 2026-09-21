@@ -15,6 +15,10 @@ interface CreateCollectionDto {
   category?: string;
   sortOrder?: number;
   rotationDegree?: number;
+  thumbX?: number;
+  thumbY?: number;
+  thumbW?: number;
+  thumbH?: number;
 }
 
 interface UploaderInfo {
@@ -31,12 +35,18 @@ interface UpdateCollectionDto {
   category?: string;
   sortOrder?: number;
   rotationDegree?: number;
+  thumbX?: number;
+  thumbY?: number;
+  thumbW?: number;
+  thumbH?: number;
+  status?: 'published' | 'pending' | 'rejected';
 }
 
 interface CollectionListParams {
   page: number;
   pageSize: number;
   category?: string;
+  status?: string;
 }
 
 type CollectionRow = typeof collectionCards.$inferSelect;
@@ -65,8 +75,60 @@ export class CollectionService {
       description: row.description ?? undefined,
       imageUrl: row.imageUrl,
       category: row.category ?? 'photocard',
+      status: row.status as 'published' | 'pending' | 'rejected',
       sortOrder: row.sortOrder ?? 0,
       rotationDegree: row.rotationDegree ?? 0,
+      thumbX: row.thumbX ?? undefined,
+      thumbY: row.thumbY ?? undefined,
+      thumbW: row.thumbW ?? undefined,
+      thumbH: row.thumbH ?? undefined,
+      uploaderId: row.uploaderId ?? undefined,
+      uploaderName: resolvedName,
+      uploaderAvatarUrl: resolvedAvatar,
+    };
+  }
+
+  private toListDto(
+    row: {
+      id: string;
+      title: string;
+      imageUrl: string | null;
+      category: string | null;
+      status: string;
+      sortOrder: number | null;
+      rotationDegree: number | null;
+      thumbX: number | null;
+      thumbY: number | null;
+      thumbW: number | null;
+      thumbH: number | null;
+      uploaderId: string | null;
+      uploaderName: string | null;
+      uploaderAvatarUrl: string | null;
+      uploader_username: string | null;
+      uploader_display_name: string | null;
+      uploader_avatar_url: string | null;
+    },
+  ): CollectionCard {
+    const uploader = row.uploader_username != null
+      ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
+      : null;
+    const resolvedName: string | undefined = uploader
+      ? uploader.displayName ?? uploader.username ?? undefined
+      : undefined;
+    const resolvedAvatar: string | undefined = uploader?.avatarUrl ?? undefined;
+
+    return {
+      id: row.id,
+      title: row.title,
+      imageUrl: row.imageUrl ?? '',
+      category: row.category ?? 'photocard',
+      status: row.status as 'published' | 'pending' | 'rejected',
+      sortOrder: row.sortOrder ?? 0,
+      rotationDegree: row.rotationDegree ?? 0,
+      thumbX: row.thumbX ?? undefined,
+      thumbY: row.thumbY ?? undefined,
+      thumbW: row.thumbW ?? undefined,
+      thumbH: row.thumbH ?? undefined,
       uploaderId: row.uploaderId ?? undefined,
       uploaderName: resolvedName,
       uploaderAvatarUrl: resolvedAvatar,
@@ -97,32 +159,45 @@ export class CollectionService {
   }
 
   async getList(params: CollectionListParams): Promise<PagedResponse<CollectionCard>> {
-    const { page, pageSize, category } = params;
+    const { page, pageSize, category, status } = params;
     const offset = (page - 1) * pageSize;
 
     const conditions = [];
     if (category) {
       conditions.push(eq(collectionCards.category, category));
     }
+    if (status && status !== 'all') {
+      conditions.push(eq(collectionCards.status, status));
+    }
+
+    const selectColumns = {
+      id: collectionCards.id,
+      title: collectionCards.title,
+      imageUrl: collectionCards.imageUrl,
+      category: collectionCards.category,
+      status: collectionCards.status,
+      sortOrder: collectionCards.sortOrder,
+      rotationDegree: collectionCards.rotationDegree,
+      thumbX: collectionCards.thumbX,
+      thumbY: collectionCards.thumbY,
+      thumbW: collectionCards.thumbW,
+      thumbH: collectionCards.thumbH,
+      uploaderId: collectionCards.uploaderId,
+      uploaderName: collectionCards.uploaderName,
+      uploaderAvatarUrl: collectionCards.uploaderAvatarUrl,
+      uploader_username: siteUsers.username,
+      uploader_display_name: siteUsers.displayName,
+      uploader_avatar_url: siteUsers.avatarUrl,
+    };
 
     const baseQuery = conditions.length > 0
       ? this.db
-          .select({
-            card: collectionCards,
-            uploader_username: siteUsers.username,
-            uploader_display_name: siteUsers.displayName,
-            uploader_avatar_url: siteUsers.avatarUrl,
-          })
+          .select(selectColumns)
           .from(collectionCards)
           .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
           .where(and(...conditions))
       : this.db
-          .select({
-            card: collectionCards,
-            uploader_username: siteUsers.username,
-            uploader_display_name: siteUsers.displayName,
-            uploader_avatar_url: siteUsers.avatarUrl,
-          })
+          .select(selectColumns)
           .from(collectionCards)
           .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id));
 
@@ -137,12 +212,7 @@ export class CollectionService {
     ]);
 
     const total = Number(countRows[0]?.count ?? 0);
-    const items: CollectionCard[] = rows.map((row) => {
-      const uploader = row.uploader_username != null
-        ? { username: row.uploader_username, displayName: row.uploader_display_name, avatarUrl: row.uploader_avatar_url }
-        : null;
-      return this.toDto(row.card, uploader);
-    });
+    const items: CollectionCard[] = rows.map((row) => this.toListDto(row));
 
     return { items, total, page, pageSize };
   }
@@ -172,6 +242,10 @@ export class CollectionService {
         category: collectionCards.category,
         sortOrder: collectionCards.sortOrder,
         rotationDegree: collectionCards.rotationDegree,
+        thumbX: collectionCards.thumbX,
+        thumbY: collectionCards.thumbY,
+        thumbW: collectionCards.thumbW,
+        thumbH: collectionCards.thumbH,
         uploaderId: collectionCards.uploaderId,
         uploader_username: siteUsers.username,
         uploader_display_name: siteUsers.displayName,
@@ -179,7 +253,10 @@ export class CollectionService {
       })
       .from(collectionCards)
       .leftJoin(siteUsers, eq(collectionCards.uploaderId, siteUsers.id))
-      .where(sql`TRIM(${collectionCards.category}) = ${'官图'}`)
+      .where(and(
+        sql`TRIM(${collectionCards.category}) = ${'官图'}`,
+        eq(collectionCards.status, 'published'),
+      ))
       .orderBy(asc(collectionCards.sortOrder), desc(collectionCards.createdAt))
       .limit(limit);
 
@@ -196,8 +273,13 @@ export class CollectionService {
         title: row.title,
         imageUrl: row.imageUrl,
         category: row.category ?? 'photocard',
+        status: 'published' as const,
         sortOrder: row.sortOrder ?? 0,
         rotationDegree: row.rotationDegree ?? 0,
+        thumbX: row.thumbX ?? undefined,
+        thumbY: row.thumbY ?? undefined,
+        thumbW: row.thumbW ?? undefined,
+        thumbH: row.thumbH ?? undefined,
         uploaderId: row.uploaderId ?? undefined,
         uploaderName: resolvedName,
         uploaderAvatarUrl: resolvedAvatar,
@@ -208,10 +290,17 @@ export class CollectionService {
   async create(
     dto: CreateCollectionDto,
     uploader?: UploaderInfo,
+    options: { isAdmin: boolean; reviewEnabled: boolean } = { isAdmin: false, reviewEnabled: true },
   ): Promise<CollectionCard> {
     const uploaderName: string | null = uploader
       ? uploader.displayName || uploader.username
       : null;
+
+    // TODO: 接入审核设置（从 settings 表或配置中读取 collectionEnabled 开关）
+    const { isAdmin, reviewEnabled } = options;
+    const status: 'published' | 'pending' = isAdmin
+      ? 'published'
+      : (reviewEnabled ? 'pending' : 'published');
 
     const id: string = randomUUID();
     await this.db
@@ -222,20 +311,26 @@ export class CollectionService {
         description: dto.description ?? null,
         imageUrl: dto.imageUrl,
         category: (dto.category ?? 'photocard').trim() || 'photocard',
+        status,
         sortOrder: dto.sortOrder ?? 0,
         rotationDegree: dto.rotationDegree ?? 0,
+        thumbX: dto.thumbX ?? null,
+        thumbY: dto.thumbY ?? null,
+        thumbW: dto.thumbW ?? null,
+        thumbH: dto.thumbH ?? null,
         uploaderId: uploader ? uploader.id : null,
         uploaderName: uploaderName,
         uploaderAvatarUrl: uploader?.avatarUrl ?? null,
       });
 
-    this.logger.log(`创建收集册卡片: ${id}`);
+    this.logger.log(`创建收集册卡片: ${id}, status: ${status}`);
     return this.findWithUploaderById(id);
   }
 
   async createWithUploader(
     dto: CreateCollectionDto,
     userId: string,
+    options: { isAdmin: boolean; reviewEnabled: boolean } = { isAdmin: false, reviewEnabled: true },
   ): Promise<CollectionCard> {
     const userRows: { username: string; displayName: string | null; avatarUrl: string | null }[] =
       await this.db
@@ -262,7 +357,7 @@ export class CollectionService {
       avatarUrl: user.avatarUrl ?? undefined,
     };
 
-    return this.create(dto, uploader);
+    return this.create(dto, uploader, options);
   }
 
   async update(id: string, dto: UpdateCollectionDto): Promise<CollectionCard> {
@@ -274,6 +369,11 @@ export class CollectionService {
     if (dto.category !== undefined) patch.category = dto.category.trim() || null;
     if (dto.sortOrder !== undefined) patch.sortOrder = dto.sortOrder;
     if (dto.rotationDegree !== undefined) patch.rotationDegree = dto.rotationDegree;
+    if (dto.thumbX !== undefined) patch.thumbX = dto.thumbX;
+    if (dto.thumbY !== undefined) patch.thumbY = dto.thumbY;
+    if (dto.thumbW !== undefined) patch.thumbW = dto.thumbW;
+    if (dto.thumbH !== undefined) patch.thumbH = dto.thumbH;
+    if (dto.status !== undefined) patch.status = dto.status;
 
     if (Object.keys(patch).length === 0) {
       throw new BadRequestException('未提供可更新字段');
@@ -291,6 +391,26 @@ export class CollectionService {
     }
 
     this.logger.log(`更新收集册卡片: ${id}`);
+    return this.findWithUploaderById(id);
+  }
+
+  async reviewCard(
+    id: string,
+    status: 'published' | 'rejected',
+  ): Promise<CollectionCard> {
+    const result = await this.db
+      .update(collectionCards)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(collectionCards.id, id));
+
+    if (result[0].affectedRows === 0) {
+      throw new NotFoundException('收集册卡片不存在');
+    }
+
+    this.logger.log(`审核收集册卡片: ${id}, status: ${status}`);
     return this.findWithUploaderById(id);
   }
 

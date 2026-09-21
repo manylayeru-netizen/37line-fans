@@ -23,6 +23,9 @@ import {
   DialogClose,
 } from '@client/src/components/ui/dialog';
 import { Image } from '@client/src/components/ui/image';
+import ThumbImage from '@client/src/components/ui/thumb-image';
+import ImageCropper from '@client/src/components/ui/image-cropper';
+import type { CropValues } from '@client/src/components/ui/image-cropper';
 
 const CollectionPage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,6 +44,12 @@ const CollectionPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string>('');
+  const [uploadCrop, setUploadCrop] = useState<CropValues>({
+    thumbX: 25,
+    thumbY: 25,
+    thumbW: 50,
+    thumbH: 50,
+  });
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
   const [uploadCategory, setUploadCategory] = useState('');
@@ -117,6 +126,7 @@ const CollectionPage: React.FC = () => {
     setUploadTitle('');
     setUploadDescription('');
     setUploadCategory('');
+    setUploadCrop({ thumbX: 25, thumbY: 25, thumbW: 50, thumbH: 50 });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -138,9 +148,17 @@ const CollectionPage: React.FC = () => {
         description?: string;
         imageUrl: string;
         category?: string;
+        thumbX: number;
+        thumbY: number;
+        thumbW: number;
+        thumbH: number;
       } = {
         title: uploadTitle.trim(),
         imageUrl,
+        thumbX: uploadCrop.thumbX,
+        thumbY: uploadCrop.thumbY,
+        thumbW: uploadCrop.thumbW,
+        thumbH: uploadCrop.thumbH,
       };
       if (uploadDescription.trim()) body.description = uploadDescription.trim();
       if (uploadCategory.trim()) body.category = uploadCategory.trim();
@@ -209,19 +227,23 @@ const CollectionPage: React.FC = () => {
                     className="hidden"
                   />
                   {uploadPreview ? (
-                    <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-dashed border-shiba/40 bg-cream/50">
-                      <Image
-                        src={uploadPreview}
-                        alt="预览"
-                        className="w-full h-full object-cover"
+                    <div className="relative">
+                      <ImageCropper
+                        imageUrl={uploadPreview}
+                        value={uploadCrop}
+                        onChange={setUploadCrop}
+                        maxWidth={320}
                       />
                       <button
                         onClick={clearUploadForm}
-                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-paper/90 text-cocoa flex items-center justify-center shadow hover:bg-shiba hover:text-paper transition"
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-paper/90 text-cocoa flex items-center justify-center shadow hover:bg-shiba hover:text-paper transition z-10"
                         aria-label="移除图片"
                       >
                         <X className="w-4 h-4" />
                       </button>
+                      <p className="text-xs text-cocoa/50 text-center mt-2">
+                        拖动方框选择缩略图显示区域（正方形）
+                      </p>
                     </div>
                   ) : (
                     <button
@@ -362,15 +384,19 @@ const CollectionPage: React.FC = () => {
                       style={{ transform: `rotate(${rotation}deg)` }}
                     >
                       <div className="aspect-square bg-grid-pattern rounded-sm overflow-hidden">
-                        <Image
-                          src={
-                            card.imageUrl ||
-                            `https://picsum.photos/seed/${card.id}/400/400`
-                          }
-                          alt={card.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
+                        {card.imageUrl ? (
+                          <ThumbImage
+                            card={card}
+                            className="w-full h-full"
+                          />
+                        ) : (
+                          <Image
+                            src={`https://picsum.photos/seed/${card.id}/400/400`}
+                            alt={card.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        )}
                       </div>
                      <div className="mt-1 sm:mt-2 text-center">
                        <p className="font-handwriting text-base sm:text-xl text-ink truncate">

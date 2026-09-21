@@ -21,6 +21,8 @@ import type {
   RegisterApplication,
   ReviewApplicationRequest,
   AdminStats,
+  ReviewSettings,
+  UpdateReviewSettingsRequest,
 } from '@shared/api.interface';
 
 @UseGuards(AdminGuard)
@@ -99,5 +101,19 @@ export class AdminController {
   async getStats(): Promise<ApiResponse<AdminStats>> {
     const stats = await this.adminService.getStats();
     return { code: 0, message: 'ok', data: stats };
+  }
+
+  @Get('review-settings')
+  async getReviewSettings(): Promise<ApiResponse<ReviewSettings>> {
+    const settings = await this.adminService.getReviewSettings();
+    return { code: 0, message: 'ok', data: settings };
+  }
+
+  @Patch('review-settings')
+  async updateReviewSettings(
+    @Body() body: UpdateReviewSettingsRequest,
+  ): Promise<ApiResponse<ReviewSettings>> {
+    const settings = await this.adminService.updateReviewSettings(body);
+    return { code: 0, message: 'ok', data: settings };
   }
 }

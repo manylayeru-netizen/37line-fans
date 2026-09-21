@@ -1,18 +1,21 @@
+import { useEffect, useState } from 'react';
 import {
-  BookOpen,
+  LayoutDashboard,
   Calendar,
   Images,
   MessageSquare,
   FileText,
   Users,
   UserPlus,
-  LayoutDashboard,
+  Settings,
+  BookOpen,
   LogOut,
-  MessageCircle,
   Home,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@client/src/store/auth.store';
+import { adminApi } from '@client/src/api';
+import type { AdminStats } from '@shared/api.interface';
 
 interface AdminLayoutProps {
   // no props needed
@@ -21,6 +24,21 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [stats, setStats] = useState<Partial<AdminStats>>({});
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await adminApi.getStats();
+        setStats(data);
+      } catch {
+        // silently ignore
+      }
+    };
+    loadStats();
+    const timer = window.setInterval(loadStats, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -29,12 +47,51 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
 
   const menuItems = [
     { path: '/admin', label: '仪表盘', icon: LayoutDashboard, end: true },
-    { path: '/admin/calendar', label: '日历管理', icon: Calendar },
-    { path: '/admin/collection', label: '照片集管理', icon: Images },
-    { path: '/admin/guestbook', label: '留言审核', icon: MessageSquare },
-    { path: '/admin/dailyfics', label: '推文管理', icon: FileText },
+    {
+      path: '/admin/calendar',
+      label: '日历管理',
+      icon: Calendar,
+      badge: stats.pendingCalendarCount,
+    },
+    {
+      path: '/admin/collection',
+      label: '照片集管理',
+      icon: Images,
+      badge: stats.pendingCollectionCount,
+    },
+    {
+      path: '/admin/guestbook',
+      label: '留言审核',
+      icon: MessageSquare,
+      badge: stats.pendingGuestbookCount,
+    },
+    {
+      path: '/admin/dailyfics',
+      label: '推文管理',
+      icon: FileText,
+      badge: stats.pendingDiaryCount,
+    },
+    {
+      path: '/admin/literature',
+      label: '文学投稿',
+      icon: BookOpen,
+      badge: stats.pendingLiteratureCount,
+    },
     { path: '/admin/users', label: '用户管理', icon: Users },
-    { path: '/admin/applications', label: '注册申请历史', icon: UserPlus },
+    {
+      path: '/admin/applications',
+      label: '注册申请历史',
+      icon: UserPlus,
+      badge: stats.pendingApplications,
+    },
+  ];
+
+  const bottomMenuItems = [
+    {
+      path: '/admin/settings/review',
+      label: '审核设置',
+      icon: Settings,
+    },
   ];
 
   return (
@@ -69,9 +126,34 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
                 }
               >
                 <item.icon size={16} />
-                <span className="hidden sm:inline">{item.label}</span>
+                <span className="hidden sm:inline flex-1">{item.label}</span>
+                {item.badge && item.badge > 0 ? (
+                  <span className="hidden sm:inline-flex min-w-[18px] h-[18px] px-1 bg-shiba text-white text-[10px] font-bold rounded-full items-center justify-center">
+                    {item.badge > 99 ? '99+' : item.badge}
+                  </span>
+                ) : null}
               </NavLink>
             </div>
+          ))}
+        </nav>
+
+        {/* Bottom Menu (Review Settings) */}
+        <nav className="hidden md:block border-t-2 border-dashed border-grid pt-3 mt-3 space-y-1">
+          {bottomMenuItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-shiba text-white shadow-md'
+                    : 'text-cocoa hover:bg-shiba/10 hover:text-shiba'
+                }`
+              }
+            >
+              <item.icon size={16} />
+              <span>{item.label}</span>
+            </NavLink>
           ))}
         </nav>
 

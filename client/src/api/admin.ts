@@ -8,6 +8,9 @@ import type {
   ReviewApplicationRequest,
   SiteUser,
   PagedResponse,
+  AdminStats,
+  ReviewSettings,
+  UpdateReviewSettingsRequest,
 } from '@shared/api.interface';
 
 interface AdminListQuery {
@@ -68,9 +71,24 @@ export async function resetUserPassword(
   return res.data;
 }
 
-export async function getStats(): Promise<Record<string, number>> {
-  const res = await apiGet<{ data: Record<string, number> }>(
-    '/api/admin/stats',
+export async function getStats(): Promise<AdminStats> {
+  const res = await apiGet<{ data: AdminStats }>('/api/admin/stats');
+  return res.data;
+}
+
+export async function getReviewSettings(): Promise<ReviewSettings> {
+  const res = await apiGet<{ data: ReviewSettings }>(
+    '/api/admin/review-settings',
+  );
+  return res.data;
+}
+
+export async function updateReviewSettings(
+  body: UpdateReviewSettingsRequest,
+): Promise<ReviewSettings> {
+  const res = await apiPatch<{ data: ReviewSettings }>(
+    '/api/admin/review-settings',
+    body,
   );
   return res.data;
 }

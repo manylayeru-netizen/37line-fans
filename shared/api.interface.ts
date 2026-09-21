@@ -117,6 +117,7 @@ export interface CalendarEvent {
   description?: string;
   hasCrown: boolean;
   eventType: string;
+  status: 'published' | 'pending' | 'rejected';
   uploaderId?: string;
   uploaderName?: string;
   uploaderAvatarUrl?: string;
@@ -141,6 +142,12 @@ export interface BatchCreateCalendarEventsResponse {
   createdCount: number;
 }
 
+export interface CalendarListQuery {
+  year?: number;
+  page?: number;
+  pageSize?: number;
+}
+
 // === 收集册 ===
 export interface CollectionCard {
   id: string;
@@ -148,8 +155,13 @@ export interface CollectionCard {
   description?: string;
   imageUrl: string;
   category: string;
+  status: 'published' | 'pending' | 'rejected';
   sortOrder: number;
   rotationDegree: number;
+  thumbX?: number;
+  thumbY?: number;
+  thumbW?: number;
+  thumbH?: number;
   uploaderId?: string;
   uploaderName?: string;
   uploaderAvatarUrl?: string;
@@ -157,6 +169,7 @@ export interface CollectionCard {
 
 export interface CollectionListQuery {
   category?: string;
+  status?: string;
   page?: number;
   pageSize?: number;
 }
@@ -166,6 +179,10 @@ export interface CreateCollectionCardRequest {
   description?: string;
   imageUrl: string;
   category?: string;
+  thumbX?: number;
+  thumbY?: number;
+  thumbW?: number;
+  thumbH?: number;
 }
 
 // === 留言板 ===
@@ -258,6 +275,22 @@ export interface ReviewApplicationRequest {
   rejectReason?: string;
 }
 
+export interface ReviewSettings {
+  diaryEnabled: boolean;
+  literatureEnabled: boolean;
+  collectionEnabled: boolean;
+  calendarEnabled: boolean;
+  guestbookEnabled: boolean;
+}
+
+export interface UpdateReviewSettingsRequest {
+  diaryEnabled?: boolean;
+  literatureEnabled?: boolean;
+  collectionEnabled?: boolean;
+  calendarEnabled?: boolean;
+  guestbookEnabled?: boolean;
+}
+
 // === 那年今日 (首页聚合) ===
 export interface OnThisDayCalendarEvent {
   id: string;
@@ -304,4 +337,8 @@ export interface AdminStats {
   pendingGuestbookCount: number;
   publishedLiteratureCount: number;
   pendingLiteratureCount: number;
+  pendingDiaryCount: number;
+  pendingCollectionCount: number;
+  pendingCalendarCount: number;
+  reviewSettings: ReviewSettings;
 }

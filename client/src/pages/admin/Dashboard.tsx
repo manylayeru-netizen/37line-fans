@@ -7,9 +7,14 @@ import {
   Clock,
   ArrowRight,
   Sparkles,
+  BookOpen,
+  Calendar,
+  Images,
+  MessageSquare,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { adminApi } from '@client/src/api';
+import type { AdminStats } from '@shared/api.interface';
 
 interface DashboardProps {
   // no props needed
@@ -17,7 +22,7 @@ interface DashboardProps {
 
 interface StatCardConfig {
   label: string;
-  key: string;
+  key: keyof AdminStats;
   icon: React.ComponentType<{ size?: number; className?: string }>;
   color: string;
   iconBg: string;
@@ -26,7 +31,7 @@ interface StatCardConfig {
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<Record<string, number>>({});
+  const [stats, setStats] = useState<Partial<AdminStats>>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -83,6 +88,54 @@ const Dashboard: React.FC<DashboardProps> = () => {
       color: 'text-shiba',
       iconBg: 'bg-shiba/20',
       tapeColor: 'bg-shiba/70',
+    },
+  ];
+
+  const pendingCards = [
+    {
+      label: '每日推文',
+      count: stats.pendingDiaryCount ?? 0,
+      path: '/admin/dailyfics?status=pending',
+      icon: BookOpen,
+      iconBg: 'bg-shiba/20',
+      iconColor: 'text-shiba',
+      tapeColor: 'bg-shiba',
+    },
+    {
+      label: '文学投稿',
+      count: stats.pendingLiteratureCount ?? 0,
+      path: '/admin/literature?status=pending',
+      icon: FileText,
+      iconBg: 'bg-tape-blue/40',
+      iconColor: 'text-tape-blue',
+      tapeColor: 'bg-tape-blue',
+    },
+    {
+      label: '照片集',
+      count: stats.pendingCollectionCount ?? 0,
+      path: '/admin/collection?status=pending',
+      icon: Images,
+      iconBg: 'bg-tape-pink/40',
+      iconColor: 'text-tape-pink',
+      tapeColor: 'bg-tape-pink',
+    },
+    {
+      label: '考古日历',
+      count: stats.pendingCalendarCount ?? 0,
+      path: '/admin/calendar?status=pending',
+      icon: Calendar,
+      iconBg: 'bg-penguin/20',
+      iconColor: 'text-penguin',
+      tapeColor: 'bg-penguin',
+    },
+    {
+      label: '留言板',
+      count: stats.pendingGuestbookCount ?? 0,
+      path: '/admin/guestbook?status=pending',
+      icon: MessageSquare,
+      iconBg: 'bg-mint/40',
+      iconColor: 'text-mint',
+      tapeColor: 'bg-mint',
     },
   ];
 
@@ -149,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                   className="text-4xl font-bold text-ink"
                   style={{ fontFamily: 'var(--font-handwriting)' }}
                 >
-                  {loading ? '—' : stats[card.key] ?? 0}
+                  {loading ? '—' : (stats[card.key] as number) ?? 0}
                 </p>
               </div>
               <div
@@ -160,6 +213,56 @@ const Dashboard: React.FC<DashboardProps> = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Pending Review Summary */}
+      <div className="bg-paper rounded-2xl p-6 shadow-md border-2 border-dashed border-grid relative mb-10">
+        <div
+          className="absolute -top-3 left-8 w-24 h-5 bg-tape-pink/70 opacity-80 rounded-sm"
+          style={{ transform: 'rotate(-2deg)' }}
+        />
+        <h3
+          className="text-2xl text-ink mb-5"
+          style={{ fontFamily: 'var(--font-handwriting)' }}
+        >
+          📋 待审核汇总
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {pendingCards.map((card) => {
+            const hasPending = card.count > 0;
+            return (
+              <button
+                key={card.label}
+                onClick={() => navigate(card.path)}
+                className="relative bg-cream rounded-xl p-4 border-2 border-dashed border-grid hover:shadow-md hover:-translate-y-0.5 transition-all text-left card-wobble"
+              >
+                {/* Tape */}
+                <div
+                  className={`absolute -top-2 left-1/2 -translate-x-1/2 w-10 h-3 ${card.tapeColor} opacity-60 rounded-sm`}
+                  style={{ transform: 'translateX(-50%) rotate(-3deg)' }}
+                />
+                {/* Badge */}
+                {hasPending && (
+                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-shiba text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md z-10">
+                    {card.count > 99 ? '99+' : card.count}
+                  </span>
+                )}
+                <div className={`w-10 h-10 rounded-lg ${card.iconBg} ${card.iconColor} flex items-center justify-center mb-3`}>
+                  <card.icon size={20} />
+                </div>
+                <p className="text-sm text-cocoa/70 mb-1">{card.label}</p>
+                <p
+                  className={`text-3xl font-bold ${
+                    hasPending ? 'text-shiba' : 'text-cocoa/40'
+                  }`}
+                  style={{ fontFamily: 'var(--font-handwriting)' }}
+                >
+                  {loading ? '—' : card.count}
+                </p>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Quick Actions */}

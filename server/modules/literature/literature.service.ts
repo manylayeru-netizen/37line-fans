@@ -27,6 +27,7 @@ import {
   literaturePostTags,
   literatureComments,
   siteUsers,
+  reviewSettings,
 } from '@server/database/tables';
 import type {
   LiteraturePost,
@@ -265,6 +266,14 @@ export class LiteratureService {
     userRole?: string,
   ): Promise<LiteraturePost> {
     const isAdmin: boolean = userRole === 'admin';
+    let postStatus: PostStatus;
+    if (isAdmin) {
+      postStatus = 'published';
+    } else {
+      const reviewEnabled = await this.getReviewEnabled('literature');
+      postStatus = reviewEnabled ? 'pending' : 'published';
+    }
+
     // 敏感词检测
     const contentCheck = this.contentFilter.filter(dto.content);
     if (!contentCheck.clean) {
@@ -312,7 +321,7 @@ export class LiteratureService {
           content: dto.content,
           recommendationReason: dto.recommendationReason,
           authorUserId,
-          status: isAdmin ? 'published' : 'pending',
+          status: postStatus,
         });
 
       if (insertResult[0].affectedRows === 0) {
@@ -343,10 +352,36 @@ export class LiteratureService {
     });
 
     this.logger.log(
-      `帖子提交成功，id=${postId}，作者=${authorUserId}，status=${isAdmin ? 'published' : 'pending'}`,
+      `帖子提交成功，id=${postId}，作者=${authorUserId}，status=${postStatus}`,
     );
     const items = await this.attachTagsToPosts([await this.findPostWithAuthorById(result.id)]);
     return items[0];
+  }
+
+  private async getReviewEnabled(
+    module: 'diary' | 'literature' | 'collection' | 'calendar' | 'guestbook',
+  ): Promise<boolean> {
+    const rows = await this.db
+      .select()
+      .from(reviewSettings)
+      .where(eq(reviewSettings.id, 1))
+      .limit(1);
+    if (rows.length === 0) return true;
+    const row = rows[0];
+    switch (module) {
+      case 'diary':
+        return row.diaryEnabled;
+      case 'literature':
+        return row.literatureEnabled;
+      case 'collection':
+        return row.collectionEnabled;
+      case 'calendar':
+        return row.calendarEnabled;
+      case 'guestbook':
+        return row.guestbookEnabled;
+      default:
+        return true;
+    }
   }
 
   // ==================== 帖子（管理员） ====================

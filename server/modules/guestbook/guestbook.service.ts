@@ -9,7 +9,7 @@ import {
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, count } from 'drizzle-orm';
-import { guestbookNotes } from '@server/database/tables';
+import { guestbookNotes, reviewSettings } from '@server/database/tables';
 import type {
   GuestbookNote,
   CreateGuestbookNoteRequest,
@@ -79,6 +79,9 @@ export class GuestbookService {
       }
     }
 
+    const reviewEnabled = await this.getReviewEnabled('guestbook');
+    const status: NoteStatus = reviewEnabled ? 'pending' : 'approved';
+
     const noteId: string = randomUUID();
     const authorName: string = dto.authorName || '匿名访客';
     const noteShape: string = dto.noteShape?.trim() || '🐕';
@@ -91,10 +94,10 @@ export class GuestbookService {
       content: dto.content,
       noteShape,
       noteColor,
-      status: 'pending',
+      status,
     });
 
-    this.logger.log(`留言提交成功，id=${noteId}`);
+    this.logger.log(`留言提交成功，id=${noteId}，status=${status}`);
     return {
       id: noteId,
       authorName,
@@ -103,7 +106,7 @@ export class GuestbookService {
       noteColor,
       positionX: 0,
       positionY: 0,
-      status: 'pending',
+      status,
       createdAt: now.toISOString(),
     };
   }
@@ -235,6 +238,32 @@ export class GuestbookService {
     }
 
     this.logger.log(`留言已删除，id=${id}`);
+  }
+
+  private async getReviewEnabled(
+    module: 'diary' | 'literature' | 'collection' | 'calendar' | 'guestbook',
+  ): Promise<boolean> {
+    const rows = await this.db
+      .select()
+      .from(reviewSettings)
+      .where(eq(reviewSettings.id, 1))
+      .limit(1);
+    if (rows.length === 0) return true;
+    const row = rows[0];
+    switch (module) {
+      case 'diary':
+        return row.diaryEnabled;
+      case 'literature':
+        return row.literatureEnabled;
+      case 'collection':
+        return row.collectionEnabled;
+      case 'calendar':
+        return row.calendarEnabled;
+      case 'guestbook':
+        return row.guestbookEnabled;
+      default:
+        return true;
+    }
   }
 
   private mapNote(

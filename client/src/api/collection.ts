@@ -65,3 +65,14 @@ export async function updateCollectionCard(
 export async function deleteCollectionCard(id: string): Promise<void> {
   await apiDelete(`/api/collection/${id}`);
 }
+
+export async function reviewCollectionCard(
+  id: string,
+  status: 'published' | 'rejected',
+): Promise<CollectionCard> {
+  const res = await apiPost<{ data: CollectionCard }>(
+    `/api/collection/admin/${id}/review`,
+    { status },
+  );
+  return res.data;
+}

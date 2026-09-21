@@ -117,6 +117,17 @@ export const fileAttachmentArray = customType<{
   },
 });
 
+export const reviewSettings = pgTable("review_settings", {
+  id: integer("id").primaryKey().default(1),
+  diaryEnabled: boolean("diary_enabled").notNull().default(true),
+  literatureEnabled: boolean("literature_enabled").notNull().default(true),
+  collectionEnabled: boolean("collection_enabled").notNull().default(true),
+  calendarEnabled: boolean("calendar_enabled").notNull().default(true),
+  guestbookEnabled: boolean("guestbook_enabled").notNull().default(true),
+  // System field: Update time (auto-filled, do not modify)
+  updatedAt: customTimestamptz("_updated_at", { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const literaturePostTags = pgTable("literature_post_tags", {
   postId: uuid("post_id").primaryKey(),
   tagId: uuid("tag_id").primaryKey(),
@@ -302,6 +313,11 @@ export const collectionCards = pgTable("collection_cards", {
   uploaderId: uuid("uploader_id"),
   uploaderName: varchar("uploader_name", { length: 100 }),
   uploaderAvatarUrl: text("uploader_avatar_url"),
+  status: varchar("status", { length: 20 }).notNull().default('published'),
+  thumbX: integer("thumb_x"),
+  thumbY: integer("thumb_y"),
+  thumbW: integer("thumb_w"),
+  thumbH: integer("thumb_h"),
   // System field: Creation time (auto-filled, do not modify)
   createdAt: customTimestamptz("_created_at", { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`),
   // System field: Creator (auto-filled, do not modify)
@@ -316,6 +332,8 @@ export const collectionCards = pgTable("collection_cards", {
   index("idx_collection_category").on(table.category),
   index("idx_collection_sort").on(table.sortOrder),
   index("idx_collection_uploader").on(table.uploaderId),
+  index("idx_collection_cards_status").on(table.status),
+  index("idx_collection_status").on(table.status),
 ]);
 
 export const calendarEvents = pgTable("calendar_events", {
@@ -329,6 +347,7 @@ export const calendarEvents = pgTable("calendar_events", {
   uploaderName: varchar("uploader_name", { length: 100 }),
   uploaderAvatarUrl: text("uploader_avatar_url"),
   sourceUrl: text("source_url"),
+  status: varchar("status", { length: 20 }).notNull().default('published'),
   // System field: Creation time (auto-filled, do not modify)
   createdAt: customTimestamptz("_created_at", { precision: 3 }).notNull().default(sql`CURRENT_TIMESTAMP`),
   // System field: Creator (auto-filled, do not modify)
@@ -342,6 +361,8 @@ export const calendarEvents = pgTable("calendar_events", {
 }, (table) => [
   index("idx_calendar_events_date").on(table.eventDate),
   index("idx_calendar_uploader").on(table.uploaderId),
+  index("idx_calendar_events_status").on(table.status),
+  index("idx_calendar_status").on(table.status),
 ]);
 
 export const diaryEntries = pgTable("diary_entries", {
@@ -391,4 +412,5 @@ export const literaturePostTagsTable = literaturePostTags;
 export const literaturePostsTable = literaturePosts;
 export const literatureTagsTable = literatureTags;
 export const registerApplicationsTable = registerApplications;
+export const reviewSettingsTable = reviewSettings;
 export const siteUsersTable = siteUsers;
