@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { CreateLiteraturePostRequest, LiteratureTag } from '@shared/api.interface';
 import { createPost, getTags } from '@client/src/api/literature';
 import PageHeader from '@client/src/components/PageHeader';
+import { useReviewSettings } from '@client/src/hooks/use-review-settings';
 
 const PostLiteraturePage: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const PostLiteraturePage: React.FC = () => {
     tagIds: [],
   });
   const [submitting, setSubmitting] = useState(false);
+  const { settings: reviewSettings } = useReviewSettings();
+  const reviewEnabled = reviewSettings?.literatureEnabled ?? true;
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,7 +73,11 @@ const PostLiteraturePage: React.FC = () => {
           <div className="bg-paper rounded-xl shadow-lg p-10 text-center">
             <div className="text-6xl mb-6">✨</div>
             <h1 className="font-handwriting text-3xl text-ink mb-3">投稿成功～</h1>
-            <p className="text-cocoa/70">等待管理员审核通过后就会展示啦 📮</p>
+            <p className="text-cocoa/70">
+              {reviewEnabled
+                ? '等待管理员审核通过后就会展示啦 📮'
+                : '发布成功，已直接公开 🎉'}
+            </p>
             <p className="text-sm text-cocoa/50 mt-4">即将跳转到文学鉴赏列表...</p>
           </div>
         </div>
@@ -188,7 +195,9 @@ const PostLiteraturePage: React.FC = () => {
           </button>
 
           <p className="text-center text-xs text-cocoa/50">
-            投稿需要管理员审核通过后才会公开展示哦
+            {reviewEnabled
+              ? '投稿需要管理员审核通过后才会公开展示哦'
+              : '提交后将直接公开展示哦'}
           </p>
         </form>
       </div>

@@ -501,9 +501,11 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
 };
 
 const CalendarPage: React.FC = () => {
-  const currentYear: number = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
+  const [year, setYear] = useState(2015);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const pageSize = 200;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -517,9 +519,10 @@ const CalendarPage: React.FC = () => {
   const fetchEvents = (): void => {
     setLoading(true);
     setError(null);
-    getCalendarList(year)
-      .then((res: CalendarEvent[]) => {
-        setEvents(res);
+    getCalendarList({ year, page, pageSize })
+      .then((res) => {
+        setEvents(res.items);
+        setTotal(res.total);
       })
       .catch((err: Error) => {
         setError(err.message || '加载失败');
@@ -533,9 +536,12 @@ const CalendarPage: React.FC = () => {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    getCalendarList(year)
-      .then((res: CalendarEvent[]) => {
-        if (!cancelled) setEvents(res);
+    getCalendarList({ year, page, pageSize })
+      .then((res) => {
+        if (!cancelled) {
+          setEvents(res.items);
+          setTotal(res.total);
+        }
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err.message || '加载失败');
@@ -546,7 +552,7 @@ const CalendarPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [year]);
+  }, [year, page]);
 
   const sortedEvents = useMemo(() => {
     return [...events].sort(

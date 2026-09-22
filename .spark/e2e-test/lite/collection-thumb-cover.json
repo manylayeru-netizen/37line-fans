@@ -1,0 +1,1 @@
+{"cases":[{"id":1,"priority":"p0","description":"打开 /collection 照片集页面，每张拍立得卡片的图片区域应当完整被图片填满（cover 效果，没有左上角小块留白问题）"},{"id":2,"priority":"p1","description":"打开 / 首页，最新合照区域和照片集卡片中的图片都应当填满各自图片框，不变形不留白"},{"id":3,"priority":"p1","description":"照片集页面在手机视口宽度下，卡片图片同样填满无留白"}]}

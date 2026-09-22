@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { submitDiary } from '@client/src/api/diary';
 import PageHeader from '@client/src/components/PageHeader';
+import { useReviewSettings } from '@client/src/hooks/use-review-settings';
 
 const contentWarningOptions = [
   { value: 'M', label: 'M' },
@@ -26,6 +27,7 @@ const PostDailyFicsPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { tweetReviewEnabled } = useReviewSettings();
 
   const toggleWarning = (value: string) => {
     setFormData((prev) => ({
@@ -63,8 +65,12 @@ const PostDailyFicsPage: React.FC = () => {
         <div className="max-w-lg mx-auto">
           <div className="bg-paper rounded-xl shadow-lg p-10 text-center">
             <div className="text-6xl mb-6">✨</div>
-            <h1 className="font-handwriting text-3xl text-ink mb-3">投稿成功～</h1>
-            <p className="text-cocoa/70">等待管理员审核通过后就会展示啦 📮</p>
+            <p className="font-handwriting text-3xl text-ink mb-3">投稿成功～</p>
+            <p className="text-cocoa/70">
+              {tweetReviewEnabled
+                ? '等待管理员审核通过后就会展示啦 📮'
+                : '提交成功，已直接发布 🎉'}
+            </p>
             <p className="text-sm text-cocoa/50 mt-4">即将跳转到每日推文列表...</p>
           </div>
         </div>
@@ -246,7 +252,9 @@ const PostDailyFicsPage: React.FC = () => {
           </button>
 
           <p className="text-center text-xs text-cocoa/50">
-            投稿需要管理员审核通过后才会公开展示哦
+            {tweetReviewEnabled
+              ? '投稿需要管理员审核通过后才会公开展示哦'
+              : '提交后将直接公开展示哦'}
           </p>
         </form>
       </div>

@@ -3,12 +3,13 @@ import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
-import { calendarEvents, collectionCards, diaryEntries } from '@server/database/tables';
+import { calendarEvents, collectionCards, diaryEntries, reviewSettings } from '@server/database/tables';
 import type {
   OnThisDayResponse,
   OnThisDayCalendarEvent,
   OnThisDayPhoto,
   OnThisDayDiaryEntry,
+  ReviewSettings,
 } from '@shared/api.interface';
 import { toDateStringRequired } from '@server/common/utils/date';
 
@@ -82,6 +83,33 @@ export class HomeService {
       events,
       photos,
       diaryEntries: diaryEntriesList,
+    };
+  }
+
+  async getReviewSettings(): Promise<ReviewSettings> {
+    const rows = await this.db
+      .select()
+      .from(reviewSettings)
+      .where(eq(reviewSettings.id, 1))
+      .limit(1);
+
+    if (rows.length === 0) {
+      return {
+        diaryEnabled: true,
+        literatureEnabled: true,
+        collectionEnabled: true,
+        calendarEnabled: true,
+        guestbookEnabled: true,
+      };
+    }
+
+    const row = rows[0];
+    return {
+      diaryEnabled: Boolean(row.diaryEnabled),
+      literatureEnabled: Boolean(row.literatureEnabled),
+      collectionEnabled: Boolean(row.collectionEnabled),
+      calendarEnabled: Boolean(row.calendarEnabled),
+      guestbookEnabled: Boolean(row.guestbookEnabled),
     };
   }
 

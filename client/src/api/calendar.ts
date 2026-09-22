@@ -9,10 +9,15 @@ import type {
   PagedResponse,
 } from '@shared/api.interface';
 
-export async function getCalendarList(year?: number): Promise<CalendarEvent[]> {
-  const res = await apiGet<{ data: CalendarEvent[] }>('/api/calendar', {
-    year,
-  });
+export async function getCalendarList(params: {
+  year?: number;
+  page?: number;
+  pageSize?: number;
+} = {}): Promise<PagedResponse<CalendarEvent>> {
+  const res = await apiGet<{ data: PagedResponse<CalendarEvent> }>(
+    '/api/calendar',
+    params,
+  );
   return res.data;
 }
 

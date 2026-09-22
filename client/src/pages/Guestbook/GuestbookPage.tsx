@@ -15,6 +15,7 @@ import {
   DialogClose,
 } from '@client/src/components/ui/dialog';
 import { toast } from 'sonner';
+import { useReviewSettings } from '@client/src/hooks/use-review-settings';
 
 const LEGACY_SHAPE_TO_EMOJI: Record<string, string> = {
   shiba: '🐕',
@@ -90,6 +91,8 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, index, onClick, onDelete, can
 
 const GuestbookPage: React.FC = () => {
   const { user, isAuthenticated } = useAuthStore();
+  const { settings: reviewSettings } = useReviewSettings();
+  const reviewEnabled = reviewSettings?.guestbookEnabled ?? true;
   const [data, setData] = useState<PagedResponse<GuestbookNote> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -254,7 +257,11 @@ const GuestbookPage: React.FC = () => {
               <div className="p-10 text-center">
                 <div className="text-5xl mb-4">✨</div>
                 <p className="font-handwriting text-2xl text-ink">留言已提交～</p>
-                <p className="text-cocoa/70 mt-2">审核通过后会显示在墙上哦 💌</p>
+                <p className="text-cocoa/70 mt-2">
+                  {reviewEnabled
+                    ? '审核通过后会显示在墙上哦 💌'
+                    : '已直接发布到墙上 ✨'}
+                </p>
               </div>
             ) : (
               <>
