@@ -29,6 +29,58 @@ import { Badge } from '@client/src/components/ui/badge';
 import { Image } from '@client/src/components/ui/image';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
+const URL_REGEX = /https?:\/\/[^\s]+/g;
+
+const renderDescriptionWithLinks = (text: string): React.ReactNode[] => {
+  const lines = text.split('\n');
+  const result: React.ReactNode[] = [];
+
+  lines.forEach((line: string, lineIdx: number) => {
+    const segments: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    const regex = new RegExp(URL_REGEX.source, 'g');
+
+    while ((match = regex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        segments.push(
+          <span key={`text-${lineIdx}-${lastIndex}`}>
+            {line.slice(lastIndex, match.index)}
+          </span>,
+        );
+      }
+      const url = match[0];
+      segments.push(
+        <UniversalLink
+          key={`link-${lineIdx}-${match.index}`}
+          to={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-shiba underline decoration-shiba/40 underline-offset-2 hover:decoration-shiba transition-colors"
+        >
+          {url}
+          <ExternalLink size={12} className="inline-block align-[-1px]" />
+        </UniversalLink>,
+      );
+      lastIndex = match.index + url.length;
+    }
+
+    if (lastIndex < line.length) {
+      segments.push(
+        <span key={`text-${lineIdx}-end`}>{line.slice(lastIndex)}</span>,
+      );
+    }
+
+    result.push(
+      <div key={`line-${lineIdx}`} className="leading-relaxed">
+        {segments.length > 0 ? segments : '\u00A0'}
+      </div>,
+    );
+  });
+
+  return result;
+};
+
 const MONTH_NAMES: string[] = [
   '1月', '2月', '3月', '4月', '5月', '6月',
   '7月', '8月', '9月', '10月', '11月', '12月',
@@ -450,10 +502,8 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
 
               {/* 描述 */}
               {ev.description && (
-                <div className="mt-4 pt-4 border-t border-cocoa/10">
-                  <p className="text-cocoa/80 text-sm leading-relaxed whitespace-pre-wrap">
-                    {ev.description}
-                  </p>
+                <div className="mt-4 pt-4 border-t border-cocoa/10 text-cocoa/80 text-sm break-all">
+                  {renderDescriptionWithLinks(ev.description)}
                 </div>
               )}
 
