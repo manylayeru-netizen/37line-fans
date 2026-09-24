@@ -137,7 +137,7 @@ export class CalendarController {
   }
 
   @UseGuards(AdminGuard)
-  @Patch(':id')
+  @Patch('admin/events/:id')
   async update(
     @Param('id') id: string,
     @Body() body: {
@@ -147,6 +147,7 @@ export class CalendarController {
       hasCrown?: boolean;
       eventType?: string;
       sourceUrl?: string;
+      status?: string;
     },
   ): Promise<ApiResponse<CalendarEvent>> {
     const data: CalendarEvent = await this.calendarService.update(id, body);
@@ -154,7 +155,7 @@ export class CalendarController {
   }
 
   @UseGuards(AdminGuard)
-  @Delete(':id')
+  @Delete('admin/events/:id')
   async delete(@Param('id') id: string): Promise<ApiResponse<null>> {
     await this.calendarService.delete(id);
     return { code: 0, message: 'ok', data: null };

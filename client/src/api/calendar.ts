@@ -1,7 +1,7 @@
 import {
   apiGet,
   apiPost,
-  apiPut,
+  apiPatch,
   apiDelete,
 } from '@client/src/utils/api-client';
 import type {
@@ -63,8 +63,8 @@ export async function updateCalendarEvent(
   id: string,
   data: Partial<CalendarEvent>,
 ): Promise<CalendarEvent> {
-  const res = await apiPut<{ data: CalendarEvent }>(
-    `/api/calendar/${id}`,
+  const res = await apiPatch<{ data: CalendarEvent }>(
+    `/api/calendar/admin/events/${id}`,
     data,
   );
   return res.data;
@@ -76,5 +76,5 @@ export async function getCalendarEventById(id: string): Promise<CalendarEvent> {
 }
 
 export async function deleteCalendarEvent(id: string): Promise<void> {
-  await apiDelete(`/api/calendar/${id}`);
+  await apiDelete(`/api/calendar/admin/events/${id}`);
 }

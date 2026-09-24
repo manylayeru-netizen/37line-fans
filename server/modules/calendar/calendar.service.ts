@@ -16,6 +16,20 @@ import type { CalendarEvent, PagedResponse } from '@shared/api.interface';
 import { AuthService } from '@server/modules/auth/auth.service';
 import { toDateStringRequired, getTime } from '@server/common/utils/date';
 
+function extractAffectedRows(result: unknown): number {
+  if (Array.isArray(result) && result.length > 0) {
+    const first = result[0] as { affectedRows?: number } | undefined;
+    if (first && typeof first.affectedRows === 'number') {
+      return first.affectedRows;
+    }
+  }
+  const res = result as { affectedRows?: number } | undefined;
+  if (res && typeof res.affectedRows === 'number') {
+    return res.affectedRows;
+  }
+  return 1;
+}
+
 interface CreateCalendarDto {
   title: string;
   eventDate: string;
@@ -32,6 +46,7 @@ interface UpdateCalendarDto {
   hasCrown?: boolean;
   eventType?: string;
   sourceUrl?: string;
+  status?: string;
 }
 
 type CalendarRow = typeof calendarEvents.$inferSelect;
@@ -277,7 +292,7 @@ export class CalendarService {
       .values({
         id,
         title: dto.title,
-        eventDate: new Date(dto.eventDate),
+        eventDate: sql`${dto.eventDate}`,
         description: dto.description ?? null,
         hasCrown: dto.hasCrown ?? false,
         eventType: dto.eventType ?? 'anniversary',
@@ -323,7 +338,7 @@ export class CalendarService {
       .values({
         id,
         title: dto.title,
-        eventDate: new Date(dto.eventDate),
+        eventDate: sql`${dto.eventDate}`,
         description: dto.description ?? null,
         hasCrown: dto.hasCrown ?? false,
         eventType: dto.eventType ?? 'anniversary',
@@ -342,12 +357,13 @@ export class CalendarService {
     id: string,
     status: 'published' | 'rejected',
   ): Promise<CalendarEvent> {
-    const result = await this.db
+    const result: unknown = await this.db
       .update(calendarEvents)
       .set({ status })
       .where(eq(calendarEvents.id, id));
 
-    if (result[0].affectedRows === 0) {
+    const affectedRows = extractAffectedRows(result);
+    if (affectedRows === 0) {
       throw new NotFoundException('日历事件不存在');
     }
 
@@ -359,22 +375,24 @@ export class CalendarService {
     const patch: Partial<typeof calendarEvents.$inferInsert> = {};
 
     if (dto.title !== undefined) patch.title = dto.title;
-    if (dto.eventDate !== undefined) patch.eventDate = new Date(dto.eventDate);
+    if (dto.eventDate !== undefined) patch.eventDate = sql`${dto.eventDate}` as unknown as Date;
     if (dto.description !== undefined) patch.description = dto.description ?? null;
     if (dto.hasCrown !== undefined) patch.hasCrown = dto.hasCrown;
     if (dto.eventType !== undefined) patch.eventType = dto.eventType;
     if (dto.sourceUrl !== undefined) patch.sourceUrl = dto.sourceUrl ?? null;
+    if (dto.status !== undefined) patch.status = dto.status;
 
     if (Object.keys(patch).length === 0) {
       throw new BadRequestException('未提供可更新字段');
     }
 
-    const result = await this.db
+    const result: unknown = await this.db
       .update(calendarEvents)
       .set(patch)
       .where(eq(calendarEvents.id, id));
 
-    if (result[0].affectedRows === 0) {
+    const affectedRows = extractAffectedRows(result);
+    if (affectedRows === 0) {
       throw new NotFoundException('日历事件不存在');
     }
 
@@ -383,11 +401,12 @@ export class CalendarService {
   }
 
   async delete(id: string): Promise<void> {
-    const result = await this.db
+    const result: unknown = await this.db
       .delete(calendarEvents)
       .where(eq(calendarEvents.id, id));
 
-    if (result[0].affectedRows === 0) {
+    const affectedRows = extractAffectedRows(result);
+    if (affectedRows === 0) {
       throw new NotFoundException('日历事件不存在');
     }
 
