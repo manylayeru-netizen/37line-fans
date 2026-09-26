@@ -81,6 +81,57 @@ const renderDescriptionWithLinks = (text: string): React.ReactNode[] => {
   return result;
 };
 
+const extractUrls = (text: string): string[] => {
+  return text.match(/https?:\/\/[^\s]+/g) || [];
+};
+
+const sourceButtonClass =
+  'inline-flex items-center gap-1 text-shiba border border-shiba/40 bg-shiba/5 hover:bg-shiba hover:text-white transition-colors text-xs rounded-full px-3 py-1';
+
+// 描述里的链接不显示长网址，统一渲染为「微博原文 ↗」橙色描边胶囊按钮；普通文字与换行保留
+const renderDescriptionWithSourceButtons = (text: string): React.ReactNode[] => {
+  const lines = text.split('\n');
+  const out: React.ReactNode[] = [];
+  lines.forEach((line: string, li: number) => {
+    const urls = line.match(/https?:\/\/[^\s]+/g) || [];
+    const plain = line.replace(/https?:\/\/[^\s]+/g, '').trim();
+    if (plain) {
+      out.push(
+        <div key={`t-${li}`} className="leading-relaxed text-cocoa/80">
+          {plain}
+        </div>,
+      );
+    }
+    urls.forEach((u: string, ui: number) => {
+      out.push(
+        <UniversalLink
+          key={`b-${li}-${ui}`}
+          to={u}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${sourceButtonClass} mt-1 mr-2`}
+          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+        >
+          {getSourcePlatformLabel(u)}
+          <ExternalLink size={12} />
+        </UniversalLink>,
+      );
+    });
+    if (!plain && urls.length === 0) {
+      out.push(<div key={`g-${li}`} className="h-2" />);
+    }
+  });
+  return out;
+};
+
+// 单一原文链接（sourceUrl 或描述里恰好一条）时，供标题外链图标使用
+const getSingleUrl = (ev: CalendarEvent): string | undefined => {
+  if (ev.sourceUrl) return ev.sourceUrl;
+  if (!ev.description) return undefined;
+  const urls = extractUrls(ev.description);
+  return urls.length === 1 ? urls[0] : undefined;
+};
+
 const MONTH_NAMES: string[] = [
   '1月', '2月', '3月', '4月', '5月', '6月',
   '7月', '8月', '9月', '10月', '11月', '12月',
@@ -492,6 +543,17 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
               <h3 className="font-handwriting text-2xl text-ink leading-tight flex items-center gap-2">
                 {ev.hasCrown && <span className="text-xl">👑</span>}
                 {ev.title}
+                {getSingleUrl(ev) && (
+                  <UniversalLink
+                    to={getSingleUrl(ev) as string}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-shiba/70 hover:text-shiba inline-flex"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  >
+                    <ExternalLink size={16} />
+                  </UniversalLink>
+                )}
               </h3>
 
               {/* 日期 */}
@@ -502,8 +564,8 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
 
               {/* 描述 */}
               {ev.description && (
-                <div className="mt-4 pt-4 border-t border-cocoa/10 text-cocoa/80 text-sm break-all">
-                  {renderDescriptionWithLinks(ev.description)}
+                <div className="mt-4 pt-4 border-t border-cocoa/10 text-cocoa/80 text-sm">
+                  {renderDescriptionWithSourceButtons(ev.description)}
                 </div>
               )}
 
@@ -513,7 +575,7 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
                   name={ev.uploaderName}
                   avatarUrl={ev.uploaderAvatarUrl}
                 />
-                {ev.sourceUrl && (
+                {ev.sourceUrl && !(ev.description || '').includes(ev.sourceUrl) && (
                   <UniversalLink
                     to={ev.sourceUrl}
                     target="_blank"
@@ -740,26 +802,30 @@ const CalendarPage: React.FC = () => {
                           <h3 className="font-handwriting text-xl text-ink flex items-center gap-2">
                              {ev.hasCrown && <span>👑</span>}
                              {ev.title}
-                             {ev.sourceUrl && (
+                             {getSingleUrl(ev) && (
                                <UniversalLink
-                                 to={ev.sourceUrl}
+                                 to={getSingleUrl(ev) as string}
                                  target="_blank"
                                  rel="noopener noreferrer"
-                                 className="text-shiba/70 hover:text-shiba"
+                                 className="text-shiba/70 hover:text-shiba inline-flex"
+                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                >
                                  <ExternalLink size={14} />
                                </UniversalLink>
                              )}
                            </h3>
                            {ev.description && (
-                             <p className="text-sm text-cocoa/70 mt-1">{ev.description}</p>
+                             <div className="text-sm text-cocoa/70 mt-1">
+                               {renderDescriptionWithSourceButtons(ev.description)}
+                             </div>
                            )}
-                           {ev.sourceUrl && (
+                           {ev.sourceUrl && !(ev.description || '').includes(ev.sourceUrl) && (
                              <UniversalLink
                                to={ev.sourceUrl}
                                target="_blank"
                                rel="noopener noreferrer"
                                className="inline-block mt-2 px-3 py-1 bg-cream border border-shiba/40 text-shiba font-handwriting text-sm rounded-full hover:bg-shiba hover:text-white transition-colors shadow-sm"
+                               onClick={(e: React.MouseEvent) => e.stopPropagation()}
                              >
                                {getSourcePlatformLabel(ev.sourceUrl)}
                              </UniversalLink>
@@ -801,3 +867,4 @@ const CalendarPage: React.FC = () => {
 };
 
 export default CalendarPage;
+//（注：内容由AI生成）

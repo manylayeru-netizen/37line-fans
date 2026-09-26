@@ -233,7 +233,7 @@ interface NavItem {
        <footer className="bg-paper/60 bg-grid-pattern mt-12">
           <div className="h-auto py-6 flex flex-col items-center justify-center">
             <p className="text-cocoa/60 text-xs max-w-2xl text-center px-4 mb-3 leading-relaxed">
-              本站为粉丝自发建立的非营利性应援站点，与艺人及其所属经纪公司无官方关联。站内图文素材版权归原作者及版权方所有，如涉及侵权请联系我们删除。
+              本站为粉丝自发建立的非营利性应援站点，与艺人及其所属经纪公司无关联。站内图文素材版权归原作者及版权方所有，如涉及侵权请联系我们删除。
             </p>
             <p className="text-cocoa/60 text-sm mb-2">
               © {new Date().getFullYear()} 37line.fans
@@ -248,3 +248,4 @@ interface NavItem {
 };
 
 export default Layout;
+//（注：内容由AI生成）
