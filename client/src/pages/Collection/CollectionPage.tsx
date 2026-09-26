@@ -26,6 +26,7 @@ import { Image } from '@client/src/components/ui/image';
 import ThumbImage from '@client/src/components/ui/thumb-image';
 import ImageCropper from '@client/src/components/ui/image-cropper';
 import type { CropValues } from '@client/src/components/ui/image-cropper';
+import { renderContentWithButtons } from '@client/src/utils/content-links';
 
 const CollectionPage: React.FC = () => {
   const navigate = useNavigate();
@@ -452,9 +453,9 @@ const CollectionPage: React.FC = () => {
                   </p>
                   {renderUploader(selectedCard)}
                   {selectedCard.description && (
-                    <p className="text-sm text-cocoa/80 mt-3 px-4">
-                      {selectedCard.description}
-                    </p>
+                    <div className="text-sm text-cocoa/80 mt-3 px-4">
+                      {renderContentWithButtons(selectedCard.description, { textClassName: 'text-sm text-cocoa/80' })}
+                    </div>
                   )}
                 </div>
                 <DialogClose className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-shiba text-paper font-handwriting shadow-md hover:scale-110 transition">

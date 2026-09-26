@@ -7,6 +7,7 @@ import ErrorState from '@client/src/components/ErrorState';
 import StickerPagination from '@client/src/components/StickerPagination';
 import { useAuthStore } from '@client/src/store/auth.store';
 import { Trash2 } from 'lucide-react';
+import { renderContentWithButtons } from '@client/src/utils/content-links';
 import {
   Dialog,
   DialogContent,
@@ -79,9 +80,9 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, index, onClick, onDelete, can
           <Trash2 size={14} />
         </button>
       )}
-       <p className="font-handwriting text-ink text-sm sm:text-base line-clamp-4 leading-relaxed pt-1 sm:pt-2">
-        {note.content}
-      </p>
+       <div className="line-clamp-4 pt-1 sm:pt-2">
+        {renderContentWithButtons(note.content, { textClassName: 'font-handwriting text-ink text-sm sm:text-base leading-relaxed' })}
+      </div>
       <div className="mt-3 pt-2 border-t border-cocoa/10 text-right">
         <span className="text-xs text-cocoa/70 font-handwriting">— {note.authorName}</span>
       </div>
@@ -336,9 +337,9 @@ const GuestbookPage: React.FC = () => {
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl select-none">
                   {shapeToEmoji(selectedNote.noteShape)}
                 </div>
-                <p className="font-handwriting text-xl text-ink leading-relaxed whitespace-pre-wrap pt-2">
-                  {selectedNote.content}
-                </p>
+                <div className="pt-2">
+                  {renderContentWithButtons(selectedNote.content, { textClassName: 'font-handwriting text-xl text-ink leading-relaxed' })}
+                </div>
                 <div className="mt-6 pt-3 border-t border-cocoa/20 text-right">
                   <span className="font-handwriting text-cocoa/70">— {selectedNote.authorName}</span>
                 </div>

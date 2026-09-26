@@ -10,6 +10,7 @@ import LoadingSpinner from '@client/src/components/LoadingSpinner';
 import ErrorState from '@client/src/components/ErrorState';
 import StickerPagination from '@client/src/components/StickerPagination';
 import { toast } from 'sonner';
+import { renderContentWithButtons } from '@client/src/utils/content-links';
 
 const LiteratureDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -129,8 +130,8 @@ const LiteratureDetailPage: React.FC = () => {
                 </div>
               )}
 
-               <div className="text-cocoa leading-relaxed md:leading-loose text-sm sm:text-base md:text-lg whitespace-pre-wrap">
-                {post.content}
+               <div>
+                {renderContentWithButtons(post.content, { textClassName: 'text-cocoa leading-relaxed md:leading-loose text-sm sm:text-base md:text-lg' })}
               </div>
             </article>
 

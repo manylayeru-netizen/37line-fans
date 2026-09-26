@@ -8,7 +8,6 @@ import {
   StickyNote,
   Sun as SunIcon,
    Heart,
-   Crown,
 } from 'lucide-react';
 import { Cloud, Sun, Star, WashiTape, PolaroidFrame } from '@client/src/components/ui/handdrawn';
 import { getDiaryLatest } from '@client/src/api/diary';
@@ -20,6 +19,7 @@ import type { CollectionCard } from '@shared/api.interface';
 import type { GuestbookNote } from '@shared/api.interface';
 import type { OnThisDayResponse } from '@shared/api.interface';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
+import { renderContentWithButtons } from '@client/src/utils/content-links';
 
 interface EntryCardData {
   title: string;
@@ -64,8 +64,6 @@ const entryCards: EntryCardData[] = [
     tapeRotation: 5,
   },
 ];
-
-const upcomingDates: { date: string; title: string; isCrown: boolean }[] = [];
 
 function getThumbPosition(card: { thumbX?: number; thumbY?: number; thumbW?: number; thumbH?: number }): string {
   if (card.thumbW !== undefined && card.thumbW > 0 && card.thumbX !== undefined && card.thumbY !== undefined) {
@@ -416,9 +414,9 @@ const HomePage: React.FC = () => {
                    {diary.submitterName && <span>· {diary.submitterName}</span>}
                  </div>
                 <h3 className="font-handwriting text-xl text-ink mb-2">{diary.title}</h3>
-                <p className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">
-                  {diary.content.length > 100 ? `${diary.content.slice(0, 100)}…` : diary.content}
-                </p>
+                <div className="text-cocoa/80 text-sm leading-relaxed line-clamp-3">
+                  {renderContentWithButtons(diary.content, { textClassName: 'text-cocoa/80 text-sm leading-relaxed' })}
+                </div>
                 <WashiTape
                   color={idx % 2 === 0 ? 'pink' : 'blue'}
                   pattern="stripes"
@@ -427,44 +425,6 @@ const HomePage: React.FC = () => {
                   className="-top-2 right-4"
                   style={{ height: 18 }}
                 />
-              </motion.div>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* ========== 即将到来的纪念日 ========== */}
-      <section className="mt-12 md:mt-16">
-        <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-           <Calendar size={20} className="text-penguin sm:size-6" />
-          <h2 className="font-handwriting text-2xl sm:text-3xl text-ink">那年今日</h2>
-           <div className="flex-1 h-0.5 bg-grid/50 ml-2" />
-        </div>
-
-        <div className="flex flex-wrap gap-4 md:gap-6">
-          {upcomingDates.length === 0 ? (
-            <div className="w-full text-center py-8 bg-paper/50 rounded-xl border-2 border-dashed border-grid">
-              <p className="font-handwriting text-xl text-cocoa/50">还没有标记重要日期哦～</p>
-            </div>
-          ) : (
-            upcomingDates.map((item, idx: number) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: idx * 0.1 }}
-                className="bg-paper rounded-xl p-5 shadow-sm text-center min-w-[110px] relative card-wobble"
-              >
-                {item.isCrown && (
-                  <Crown
-                    size={22}
-                    className="absolute -top-2 left-1/2 -translate-x-1/2 text-shiba"
-                    fill="#F4A261"
-                  />
-                )}
-                <div className="font-handwriting text-3xl text-shiba mb-1">{item.date}</div>
-                <div className="text-cocoa/80 text-sm">{item.title}</div>
               </motion.div>
             ))
           )}

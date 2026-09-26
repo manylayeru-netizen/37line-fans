@@ -28,101 +28,7 @@ import {
 import { Badge } from '@client/src/components/ui/badge';
 import { Image } from '@client/src/components/ui/image';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
-
-const URL_REGEX = /https?:\/\/[^\s]+/g;
-
-const renderDescriptionWithLinks = (text: string): React.ReactNode[] => {
-  const lines = text.split('\n');
-  const result: React.ReactNode[] = [];
-
-  lines.forEach((line: string, lineIdx: number) => {
-    const segments: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    const regex = new RegExp(URL_REGEX.source, 'g');
-
-    while ((match = regex.exec(line)) !== null) {
-      if (match.index > lastIndex) {
-        segments.push(
-          <span key={`text-${lineIdx}-${lastIndex}`}>
-            {line.slice(lastIndex, match.index)}
-          </span>,
-        );
-      }
-      const url = match[0];
-      segments.push(
-        <UniversalLink
-          key={`link-${lineIdx}-${match.index}`}
-          to={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-shiba underline decoration-shiba/40 underline-offset-2 hover:decoration-shiba transition-colors"
-        >
-          {url}
-          <ExternalLink size={12} className="inline-block align-[-1px]" />
-        </UniversalLink>,
-      );
-      lastIndex = match.index + url.length;
-    }
-
-    if (lastIndex < line.length) {
-      segments.push(
-        <span key={`text-${lineIdx}-end`}>{line.slice(lastIndex)}</span>,
-      );
-    }
-
-    result.push(
-      <div key={`line-${lineIdx}`} className="leading-relaxed">
-        {segments.length > 0 ? segments : '\u00A0'}
-      </div>,
-    );
-  });
-
-  return result;
-};
-
-const extractUrls = (text: string): string[] => {
-  return text.match(/https?:\/\/[^\s]+/g) || [];
-};
-
-const sourceButtonClass =
-  'inline-flex items-center gap-1 text-shiba border border-shiba/40 bg-shiba/5 hover:bg-shiba hover:text-white transition-colors text-xs rounded-full px-3 py-1';
-
-// 描述里的链接不显示长网址，统一渲染为「微博原文 ↗」橙色描边胶囊按钮；普通文字与换行保留
-const renderDescriptionWithSourceButtons = (text: string): React.ReactNode[] => {
-  const lines = text.split('\n');
-  const out: React.ReactNode[] = [];
-  lines.forEach((line: string, li: number) => {
-    const urls = line.match(/https?:\/\/[^\s]+/g) || [];
-    const plain = line.replace(/https?:\/\/[^\s]+/g, '').trim();
-    if (plain) {
-      out.push(
-        <div key={`t-${li}`} className="leading-relaxed text-cocoa/80">
-          {plain}
-        </div>,
-      );
-    }
-    urls.forEach((u: string, ui: number) => {
-      out.push(
-        <UniversalLink
-          key={`b-${li}-${ui}`}
-          to={u}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${sourceButtonClass} mt-1 mr-2`}
-          onClick={(e: React.MouseEvent) => e.stopPropagation()}
-        >
-          {getSourcePlatformLabel(u)}
-          <ExternalLink size={12} />
-        </UniversalLink>,
-      );
-    });
-    if (!plain && urls.length === 0) {
-      out.push(<div key={`g-${li}`} className="h-2" />);
-    }
-  });
-  return out;
-};
+import { extractUrls, getSourcePlatformLabel, renderContentWithButtons, SOURCE_BUTTON_CLASS } from '@client/src/utils/content-links';
 
 // 单一原文链接（sourceUrl 或描述里恰好一条）时，供标题外链图标使用
 const getSingleUrl = (ev: CalendarEvent): string | undefined => {
@@ -166,23 +72,6 @@ const UploaderBadge: React.FC<UploaderBadgeProps> = ({ name, avatarUrl }) => {
       <span className="truncate max-w-[100px]">{name}</span>
     </div>
   );
-};
-
-const getSourcePlatformLabel = (url: string): string => {
-  const hostname = url.toLowerCase();
-  if (hostname.includes('weibo.com') || hostname.includes('m.weibo.cn') || hostname.includes('weibo.cn')) {
-    return '微博原文 ↗';
-  }
-  if (hostname.includes('lofter.com')) {
-    return 'Lofter 原文 ↗';
-  }
-  if (hostname.includes('ao3.org')) {
-    return 'AO3 原文 ↗';
-  }
-  if (hostname.includes('twitter.com') || hostname.includes('x.com')) {
-    return 'X 原文 ↗';
-  }
-  return '查看原文 ↗';
 };
 
 interface MonthGridProps {
@@ -565,7 +454,7 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
               {/* 描述 */}
               {ev.description && (
                 <div className="mt-4 pt-4 border-t border-cocoa/10 text-cocoa/80 text-sm">
-                  {renderDescriptionWithSourceButtons(ev.description)}
+                  {renderContentWithButtons(ev.description, { textClassName: 'leading-relaxed text-cocoa/80' })}
                 </div>
               )}
 
@@ -580,10 +469,10 @@ const EventDetailDialog: React.FC<EventDetailDialogProps> = ({
                     to={ev.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-shiba/10 border border-shiba/30 text-shiba font-handwriting text-sm rounded-full hover:bg-shiba hover:text-white transition-colors shadow-sm"
+                    className={`${SOURCE_BUTTON_CLASS} mt-2`}
                   >
-                    <ExternalLink size={14} />
                     {getSourcePlatformLabel(ev.sourceUrl)}
+                    <ExternalLink size={12} />
                   </UniversalLink>
                 )}
               </div>
@@ -816,7 +705,7 @@ const CalendarPage: React.FC = () => {
                            </h3>
                            {ev.description && (
                              <div className="text-sm text-cocoa/70 mt-1">
-                               {renderDescriptionWithSourceButtons(ev.description)}
+                               {renderContentWithButtons(ev.description, { textClassName: 'leading-relaxed text-cocoa/70' })}
                              </div>
                            )}
                            {ev.sourceUrl && !(ev.description || '').includes(ev.sourceUrl) && (
@@ -824,10 +713,11 @@ const CalendarPage: React.FC = () => {
                                to={ev.sourceUrl}
                                target="_blank"
                                rel="noopener noreferrer"
-                               className="inline-block mt-2 px-3 py-1 bg-cream border border-shiba/40 text-shiba font-handwriting text-sm rounded-full hover:bg-shiba hover:text-white transition-colors shadow-sm"
+                               className={`${SOURCE_BUTTON_CLASS} mt-2`}
                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
                              >
                                {getSourcePlatformLabel(ev.sourceUrl)}
+                               <ExternalLink size={12} />
                              </UniversalLink>
                            )}
                            <div className="mt-2">

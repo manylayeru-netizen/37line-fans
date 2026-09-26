@@ -8,6 +8,7 @@ import PageHeader from '@client/src/components/PageHeader';
 import LoadingSpinner from '@client/src/components/LoadingSpinner';
 import ErrorState from '@client/src/components/ErrorState';
 import StickerPagination from '@client/src/components/StickerPagination';
+import { renderContentWithButtons } from '@client/src/utils/content-links';
 
 const formatDate = (dateStr: string): { day: string; month: string; year: string } => {
   const d = new Date(dateStr);
@@ -139,9 +140,9 @@ const DiaryPage: React.FC = () => {
                                </p>
                              </div>
                            )}
-                           <p className="text-cocoa/80 leading-relaxed line-clamp-3 text-sm md:text-base">
-                             {entry.content}
-                           </p>
+                           <div className="text-cocoa/80 line-clamp-3 text-sm md:text-base">
+                             {renderContentWithButtons(entry.content, { textClassName: 'leading-relaxed text-cocoa/80 text-sm md:text-base' })}
+                           </div>
                            <div className="mt-4 flex justify-end">
                             <span className="font-handwriting text-shiba hover:text-penguin transition-colors text-lg">
                               阅读更多 →
