@@ -59,6 +59,7 @@ interface CalendarListRow {
   eventType: string | null;
   status: string;
   uploaderId: string | null;
+  description: string | null;
   sourceUrl: string | null;
   uploader_username: string | null;
   uploader_display_name: string | null;
@@ -114,6 +115,7 @@ export class CalendarService {
       uploaderId: row.uploaderId ?? undefined,
       uploaderName: resolvedName,
       uploaderAvatarUrl: resolvedAvatar,
+      description: row.description ?? undefined,
       sourceUrl: row.sourceUrl ?? undefined,
     };
   }
@@ -203,6 +205,7 @@ export class CalendarService {
         eventType: calendarEvents.eventType,
         status: calendarEvents.status,
         uploaderId: calendarEvents.uploaderId,
+        description: calendarEvents.description,
         sourceUrl: calendarEvents.sourceUrl,
         uploader_username: siteUsers.username,
         uploader_display_name: siteUsers.displayName,

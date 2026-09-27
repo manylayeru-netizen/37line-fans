@@ -51,21 +51,25 @@ export const customTimestamp = customType<{
   },
 });
 
-export const textArray = customType<{ data: string[]; driverData: string }>({
+export const textArray = customType<{ data: string[]; driverData: unknown }>({
   dataType() {
     return 'json';
   },
   toDriver(value: string[]) {
     return JSON.stringify(value ?? []);
   },
-  fromDriver(value: string): string[] {
-    if (!value) return [];
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.map(String) : [];
-    } catch {
-      return [];
+  fromDriver(value: unknown): string[] {
+    if (value == null) return [];
+    if (Array.isArray(value)) return value.map(String);
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.map(String) : [];
+      } catch {
+        return [];
+      }
     }
+    return [];
   },
 });
 

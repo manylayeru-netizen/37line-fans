@@ -18,8 +18,16 @@ import type { DiaryEntry } from '@shared/api.interface';
 import type { CollectionCard } from '@shared/api.interface';
 import type { GuestbookNote } from '@shared/api.interface';
 import type { OnThisDayResponse } from '@shared/api.interface';
-import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 import { renderContentWithButtons } from '@client/src/utils/content-links';
+
+function pickEventUrl(event: { sourceUrl?: string; description?: string | null }): string | undefined {
+  if (event.sourceUrl) return event.sourceUrl;
+  if (event.description) {
+    const matched = event.description.match(/https?:\/\/[^\s]+/);
+    if (matched) return matched[0];
+  }
+  return undefined;
+}
 
 interface EntryCardData {
   title: string;
@@ -234,7 +242,11 @@ const HomePage: React.FC = () => {
                         initial={{ opacity: 0, x: -10 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
-                        className="bg-paper rounded-lg p-3 sm:p-4 shadow-sm flex items-start gap-3 hover:shadow transition-shadow"
+                        onClick={() => {
+                          const url = pickEventUrl(event);
+                          if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
+                        className={`bg-paper rounded-lg p-3 sm:p-4 shadow-sm flex items-start gap-3 hover:shadow transition-shadow ${pickEventUrl(event) ? 'cursor-pointer' : ''}`}
                       >
                         <div className="flex-shrink-0 w-14 h-14 rounded-lg bg-shiba/10 flex flex-col items-center justify-center">
                           <span className="font-handwriting text-lg text-shiba leading-none">{year}</span>
@@ -246,17 +258,11 @@ const HomePage: React.FC = () => {
                             <p className="text-cocoa/70 text-sm line-clamp-2 mt-1">{event.description}</p>
                           )}
                         </div>
-                        {event.sourceUrl && (
-                          <UniversalLink
-                            to={event.sourceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-shrink-0 text-penguin hover:text-penguin/80 text-sm"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                        {pickEventUrl(event) ? (
+                          <span className="flex-shrink-0 text-penguin self-center">
                             <BookOpen size={16} />
-                          </UniversalLink>
-                        )}
+                          </span>
+                        ) : null}
                       </motion.div>
                     );
                   })}
