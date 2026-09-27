@@ -351,6 +351,55 @@ export const reviewSettings = mysqlTable('review_settings', {
     .default(sql`CURRENT_TIMESTAMP(3)`),
 });
 
+// === 疝鸡杯：题库 ===
+
+export const quizQuestions = mysqlTable('quiz_questions', {
+  id: uuid('id').primaryKey().$defaultFn(() => randomUUID()),
+  stem: text('stem').notNull(),
+  options: textArray('options'),
+  correctOption: int('correct_option').notNull().default(0),
+  category: varchar('category', { length: 20 }).notNull().default('basic'),
+  difficulty: varchar('difficulty', { length: 20 }).notNull().default('medium'),
+  sourceUrl: text('source_url'),
+  sourceNote: varchar('source_note', { length: 255 }),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  submitterId: uuid('submitter_id'),
+  submitterName: varchar('submitter_name', { length: 100 }),
+  createdAt: customTimestamp('_created_at', { precision: 3 })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+  updatedAt: customTimestamp('_updated_at', { precision: 3 })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+}, (table) => [
+  index('qq_status_idx').on(table.status),
+  index('qq_category_idx').on(table.category),
+  index('qq_submitter_idx').on(table.submitterId),
+]);
+
+// === 疝鸡杯：成绩（日榜 / 周榜；一局结束只写一条）===
+
+export const quizScores = mysqlTable('quiz_scores', {
+  id: uuid('id').primaryKey().$defaultFn(() => randomUUID()),
+  userId: uuid('user_id'),
+  userDisplayName: varchar('user_display_name', { length: 100 }),
+  userAvatarUrl: text('user_avatar_url'),
+  mode: varchar('mode', { length: 20 }).notNull().default('timed'),
+  score: int('score').notNull().default(0),
+  correctCount: int('correct_count').notNull().default(0),
+  totalQuestions: int('total_questions').notNull().default(0),
+  durationSec: int('duration_sec'),
+  maxStreak: int('max_streak'),
+  opponentId: uuid('opponent_id'),
+  isWin: boolean('is_win'),
+  createdAt: customTimestamp('_created_at', { precision: 3 })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP(3)`),
+}, (table) => [
+  index('qs_mode_created_idx').on(table.mode, table.createdAt),
+  index('qs_user_idx').on(table.userId),
+]);
+
 // table aliases
 export const calendarEventsTable = calendarEvents;
 export const collectionCardsTable = collectionCards;

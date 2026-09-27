@@ -18,6 +18,7 @@ interface NavItem {
    { label: '考古日历', path: '/calendar', color: '#a87d4b' },
    { label: '照片集', path: '/collection', color: '#d9cfa9' },
    { label: '留言板', path: '/guestbook', color: '#6B4F3A' },
+   { label: '疝鸡杯', path: '/quiz', color: '#c98a3e' },
  ];
 
  const ribbonOffset = (index: number): number => {

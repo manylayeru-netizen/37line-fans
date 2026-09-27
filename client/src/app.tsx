@@ -44,10 +44,12 @@ import GuestbookManage from './pages/admin/GuestbookManage';
 import TweetManage from './pages/admin/TweetManage';
 import CommentManage from './pages/admin/CommentManage';
 import TagManage from './pages/admin/TagManage';
+import QuizManage from './pages/admin/QuizManage';
 import UserManage from './pages/admin/UserManage';
 import ApplicationManage from './pages/admin/ApplicationManage';
 import ReviewSettings from './pages/admin/ReviewSettings';
 import AccountSettingsPage from './pages/Settings/AccountSettingsPage';
+import QuizPage from './pages/Quiz/QuizPage';
 
 const PLATFORM_BADGE_KEYWORDS = [
   'miaoda',
@@ -151,6 +153,7 @@ const RoutesComponent = () => {
         <Route path="collection" element={<CollectionPage />} />
          <Route path="guestbook" element={<GuestbookPage />} />
          <Route path="settings" element={<AccountSettingsPage />} />
+         <Route path="quiz" element={<QuizPage />} />
       </Route>
        <Route path="admin" element={<AdminLayout />}>
          <Route index element={<Dashboard />} />
@@ -160,6 +163,7 @@ const RoutesComponent = () => {
          <Route path="guestbook" element={<GuestbookManage />} />
          <Route path="literature/comments" element={<CommentManage />} />
          <Route path="literature/tags" element={<TagManage />} />
+         <Route path="quiz" element={<QuizManage />} />
          <Route path="users" element={<UserManage />} />
           <Route path="applications" element={<ApplicationManage />} />
           <Route path="settings/review" element={<ReviewSettings />} />

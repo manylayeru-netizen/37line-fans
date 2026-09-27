@@ -11,6 +11,7 @@ import {
   BookOpen,
   LogOut,
   Home,
+  Trophy,
 } from 'lucide-react';
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@client/src/store/auth.store';
@@ -70,6 +71,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = () => {
       label: '推文管理',
       icon: FileText,
       badge: (stats.pendingDiaryCount ?? 0) + (stats.pendingLiteratureCount ?? 0),
+    },
+    {
+      path: '/admin/quiz',
+      label: '题库管理',
+      icon: Trophy,
     },
     { path: '/admin/users', label: '用户管理', icon: Users },
     {

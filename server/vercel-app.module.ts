@@ -14,6 +14,7 @@ import { LiteratureModule } from './modules/literature/literature.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { HomeModule } from './modules/home/home.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { QuizModule } from './modules/quiz/quiz.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { UploadModule } from './modules/upload/upload.module';
     AdminModule,
     HomeModule,
     UploadModule,
+    QuizModule,
   ],
   providers: [
     {
