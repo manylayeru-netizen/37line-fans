@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { DRIZZLE_DATABASE } from '@server/database/database.module';
 import type { MySql2Database } from 'drizzle-orm/mysql2';
 import { quizQuestions, quizScores, siteUsers } from '@server/database/tables';
+import * as Ably from 'ably';
 
 export interface PublicQuestion {
   id: string;
@@ -182,6 +183,180 @@ export class QuizService {
     });
 
     return { mode, score, correctCount, total: answers.length, maxStreak, detail };
+  }
+
+  // ---------------- 玩家：在线对决 ----------------
+
+  async battleStart(): Promise<PublicQuestion[]> {
+    return this.getQuestions('battle', undefined, 10);
+  }
+
+  async getQuestionsByIds(ids: string[]): Promise<PublicQuestion[]> {
+    const list = Array.isArray(ids) ? ids.slice(0, 30) : [];
+    if (!list.length) return [];
+    const rows = await this.db
+      .select({
+        id: quizQuestions.id,
+        stem: quizQuestions.stem,
+        options: quizQuestions.options,
+        category: quizQuestions.category,
+        difficulty: quizQuestions.difficulty,
+      })
+      .from(quizQuestions)
+      .where(and(eq(quizQuestions.status, 'active'), inArray(quizQuestions.id, list)));
+    const map = new Map(rows.map((r) => [r.id, r]));
+    const out: PublicQuestion[] = [];
+    for (const id of list) {
+      const r = map.get(id);
+      if (r) {
+        out.push({
+          id: r.id,
+          stem: r.stem,
+          options: r.options,
+          category: r.category,
+          difficulty: r.difficulty,
+        });
+      }
+    }
+    return out;
+  }
+
+  async battleSubmit(
+    userId: string,
+    body: { answers: SubmitAnswerItem[]; opponentId?: string; durationSec?: number },
+  ) {
+    const answers = Array.isArray(body.answers) ? body.answers : [];
+    if (!answers.length) throw new BadRequestException('没有作答记录');
+    if (!body.opponentId) throw new BadRequestException('缺少对手信息');
+
+    const ids = answers.map((a) => a.questionId);
+    const qrows = await this.db
+      .select({ id: quizQuestions.id, correct: quizQuestions.correctOption })
+      .from(quizQuestions)
+      .where(inArray(quizQuestions.id, ids));
+    const correctMap = new Map(qrows.map((q) => [q.id, q.correct]));
+
+    let correctCount = 0;
+    const detail = answers.map((a) => {
+      const correct = correctMap.get(a.questionId);
+      const isCorrect = correct != null && a.selectedIndex === correct;
+      if (isCorrect) correctCount += 1;
+      return { questionId: a.questionId, selected: a.selectedIndex, correct, isCorrect };
+    });
+
+    const urows = await this.db
+      .select({
+        username: siteUsers.username,
+        displayName: siteUsers.displayName,
+        avatarUrl: siteUsers.avatarUrl,
+      })
+      .from(siteUsers)
+      .where(eq(siteUsers.id, userId))
+      .limit(1);
+    const u = urows[0];
+    const name = u?.displayName || u?.username || '用户';
+
+    const scoreId = randomUUID();
+    await this.db.insert(quizScores).values({
+      id: scoreId,
+      userId,
+      userDisplayName: name,
+      userAvatarUrl: u?.avatarUrl ?? null,
+      mode: 'battle',
+      score: correctCount,
+      correctCount,
+      totalQuestions: answers.length,
+      durationSec: body.durationSec ?? null,
+      maxStreak: 0,
+      opponentId: body.opponentId,
+      isWin: false,
+    });
+
+    return {
+      scoreId,
+      score: correctCount,
+      correctCount,
+      total: answers.length,
+      durationSec: body.durationSec ?? null,
+      detail,
+    };
+  }
+
+  async battleSettle(userId: string, scoreId: string, opponentId: string) {
+    const mineRows = await this.db
+      .select()
+      .from(quizScores)
+      .where(
+        and(
+          eq(quizScores.id, scoreId),
+          eq(quizScores.userId, userId),
+          eq(quizScores.mode, 'battle'),
+        ),
+      )
+      .limit(1);
+    const mine = mineRows[0];
+    if (!mine) throw new NotFoundException('对战成绩不存在');
+
+    const oppRows = await this.db
+      .select()
+      .from(quizScores)
+      .where(and(eq(quizScores.userId, opponentId), eq(quizScores.mode, 'battle')))
+      .orderBy(desc(quizScores.createdAt))
+      .limit(1);
+    const opp = oppRows[0];
+
+    let result: 'win' | 'lose' | 'draw';
+    if (!opp) {
+      result = 'win';
+    } else {
+      const ms = Number(mine.score);
+      const os = Number(opp.score);
+      if (ms > os) result = 'win';
+      else if (ms < os) result = 'lose';
+      else {
+        const md = Number(mine.durationSec ?? 999999);
+        const od = Number(opp.durationSec ?? 999999);
+        if (md < od) result = 'win';
+        else if (md > od) result = 'lose';
+        else result = 'draw';
+      }
+    }
+
+    await this.db
+      .update(quizScores)
+      .set({ isWin: result === 'win' })
+      .where(eq(quizScores.id, scoreId));
+
+    return {
+      result,
+      mine: {
+        score: Number(mine.score),
+        correctCount: Number(mine.correctCount),
+        total: Number(mine.totalQuestions),
+        durationSec: mine.durationSec,
+      },
+      opponent: opp
+        ? {
+            score: Number(opp.score),
+            correctCount: Number(opp.correctCount),
+            total: Number(opp.totalQuestions),
+            durationSec: opp.durationSec,
+          }
+        : null,
+    };
+  }
+
+  // ---------------- Ably：短期连接令牌（密钥不下发到前端）----------------
+
+  async createAblyToken(userId: string) {
+    const key = process.env.ABLY_API_KEY;
+    if (!key) throw new BadRequestException('实时服务未配置');
+    const rest = new Ably.Rest(key);
+    const tokenRequest = await rest.auth.createTokenRequest({
+      clientId: userId,
+      capability: JSON.stringify({ 'battle:*': ['publish', 'subscribe', 'presence'] }),
+    });
+    return tokenRequest;
   }
 
   // ---------------- 玩家：榜单 ----------------

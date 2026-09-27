@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@client/src/components/ui/dialog';
+import BattleView from './BattleView';
 
 type Mode = 'timed' | 'streak';
 type View = 'home' | 'play' | 'result';
@@ -49,6 +50,7 @@ const QuizPage: React.FC = () => {
   const { user } = useAuthStore();
 
   const [view, setView] = useState<View>('home');
+  const [showBattle, setShowBattle] = useState(false);
   const [mode, setMode] = useState<Mode>('timed');
   const [starting, setStarting] = useState(false);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -230,6 +232,10 @@ const QuizPage: React.FC = () => {
     }
   };
 
+  if (showBattle) {
+    return <BattleView onExit={() => setShowBattle(false)} />;
+  }
+
   // ================= 渲染：首页 =================
 
   if (view === 'home') {
@@ -238,8 +244,8 @@ const QuizPage: React.FC = () => {
         key: 'battle',
         icon: Swords,
         title: '在线对决',
-        desc: '开房邀请好友，实时对战',
-        disabled: true,
+        desc: '开房邀请好友，同题竞速',
+        disabled: false,
       },
       { key: 'timed', icon: Timer, title: '限时赛', desc: `${TIMED_SECONDS} 秒内答 10 题`, disabled: false },
       { key: 'streak', icon: Flame, title: '连胜赛', desc: '答错即止，挑战最长连胜', disabled: false },
@@ -277,7 +283,17 @@ const QuizPage: React.FC = () => {
             <button
               key={m.key}
               disabled={m.disabled}
-              onClick={() => startGame(m.key as Mode)}
+              onClick={() => {
+                if (m.key === 'battle') {
+                  if (!user) {
+                    toast.error('请先登录后再参赛');
+                    return;
+                  }
+                  setShowBattle(true);
+                } else {
+                  startGame(m.key as Mode);
+                }
+              }}
               className={`relative rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
                 m.disabled
                   ? 'border-grid opacity-60 cursor-not-allowed'

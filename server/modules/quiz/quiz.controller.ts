@@ -79,6 +79,47 @@ export class QuizController {
     return { code:0, message: 'ok', data };
   }
 
+  // ---------------- 玩家：在线对决 ----------------
+
+  @UseGuards(AuthGuard)
+  @Get('ably-token')
+  async ablyToken(@Req() req: any) {
+    const data = await this.quizService.createAblyToken(req.user.userId);
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('battle/start')
+  async battleStart() {
+    const data = await this.quizService.battleStart();
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('battle/by-ids')
+  async battleByIds(@Body() body: any) {
+    const data = await this.quizService.getQuestionsByIds(body.ids || []);
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('battle/submit')
+  async battleSubmit(@Req() req: any, @Body() body: any) {
+    const data = await this.quizService.battleSubmit(req.user.userId, body);
+    return { code: 0, message: 'ok', data };
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('battle/settle')
+  async battleSettle(@Req() req: any, @Body() body: any) {
+    const data = await this.quizService.battleSettle(
+      req.user.userId,
+      body.scoreId,
+      body.opponentId,
+    );
+    return { code: 0, message: 'ok', data };
+  }
+
   // ---------------- 管理员：题库管理 ----------------
 
   @UseGuards(AuthGuard, AdminGuard)

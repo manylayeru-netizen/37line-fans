@@ -13,4 +13,6 @@ export type {
   QuizSubmitResult,
   LeaderboardRow,
   QuestionInput,
+  BattleSubmitResult,
+  BattleSettleResult,
 } from './quiz';

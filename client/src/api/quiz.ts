@@ -127,6 +127,79 @@ export async function submitQuestion(
   return res.data;
 }
 
+// ---------------- 玩家：在线对决 ----------------
+
+export interface BattleSubmitResult {
+  scoreId: string;
+  score: number;
+  correctCount: number;
+  total: number;
+  durationSec: number | null;
+  detail: QuizSubmitResult['detail'];
+}
+
+export interface BattleSettleResult {
+  result: 'win' | 'lose' | 'draw';
+  mine: {
+    score: number;
+    correctCount: number;
+    total: number;
+    durationSec: number | null;
+  };
+  opponent: {
+    score: number;
+    correctCount: number;
+    total: number;
+    durationSec: number | null;
+  } | null;
+}
+
+export async function getAblyToken(): Promise<Record<string, unknown>> {
+  const res = await apiGet<{ data: Record<string, unknown> }>(
+    '/api/quiz/ably-token',
+  );
+  return res.data;
+}
+
+export async function battleStart(): Promise<QuizQuestion[]> {
+  const res = await apiPost<{ data: QuizQuestion[] }>(
+    '/api/quiz/battle/start',
+    {},
+  );
+  return res.data;
+}
+
+export async function getQuestionsByIds(ids: string[]): Promise<QuizQuestion[]> {
+  const res = await apiPost<{ data: QuizQuestion[] }>(
+    '/api/quiz/battle/by-ids',
+    { ids },
+  );
+  return res.data;
+}
+
+export async function battleSubmit(data: {
+  answers: Array<{ questionId: string; selectedIndex: number }>;
+  opponentId: string;
+  durationSec?: number;
+}): Promise<BattleSubmitResult> {
+  const res = await apiPost<{ data: BattleSubmitResult }>(
+    '/api/quiz/battle/submit',
+    data,
+  );
+  return res.data;
+}
+
+export async function battleSettle(data: {
+  scoreId: string;
+  opponentId: string;
+}): Promise<BattleSettleResult> {
+  const res = await apiPost<{ data: BattleSettleResult }>(
+    '/api/quiz/battle/settle',
+    data,
+  );
+  return res.data;
+}
+
 // ---------------- 管理员：题库 ----------------
 
 export async function adminListQuestions(params: {
