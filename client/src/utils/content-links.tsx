@@ -9,6 +9,7 @@ export const extractUrls = (text: string): string[] =>
 export const getSourcePlatformLabel = (url: string): string => {
   const h = url.toLowerCase();
   if (h.includes('weibo.com') || h.includes('weibo.cn')) return '微博原文 ↗';
+  if (h.includes('bilibili.com') || h.includes('b23.tv')) return 'B站视频 ↗';
   if (h.includes('lofter.com')) return 'Lofter 原文 ↗';
   if (h.includes('ao3.org')) return 'AO3 原文 ↗';
   if (h.includes('twitter.com') || h.includes('x.com')) return 'X 原文 ↗';

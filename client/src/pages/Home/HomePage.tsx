@@ -255,7 +255,11 @@ const HomePage: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <div className="font-handwriting text-base text-ink truncate">{event.title}</div>
                           {event.description && (
-                            <p className="text-cocoa/70 text-sm line-clamp-2 mt-1">{event.description}</p>
+                            <div className="mt-1" onClick={(e) => e.stopPropagation()}>
+                              {renderContentWithButtons(event.description, {
+                                textClassName: 'text-cocoa/70 text-sm leading-relaxed',
+                              })}
+                            </div>
                           )}
                         </div>
                         {pickEventUrl(event) ? (
