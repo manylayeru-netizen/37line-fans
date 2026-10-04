@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   BookOpen,
@@ -205,6 +205,24 @@ const HomePage: React.FC = () => {
       </section>
 
       <div id="home-content" />
+
+      {/* ========== 疝鸡杯入口 ========== */}
+      <Link to="/quiz" className="mt-8 md:mt-10 block group">
+        <div className="rounded-2xl border-2 border-dashed border-[#c98a3e]/50 bg-paper p-5 md:p-6 flex items-center gap-4 hover:shadow-md hover:-translate-y-0.5 transition-all">
+          <div className="w-12 h-12 rounded-full bg-[#c98a3e]/15 flex items-center justify-center text-2xl shrink-0">
+            🏆
+          </div>
+          <div className="flex-1">
+            <p className="font-handwriting text-xl md:text-2xl text-ink">疝鸡杯 · 37 小问答</p>
+            <p className="text-xs md:text-sm text-cocoa/60 mt-0.5">
+              限时赛 / 连胜赛 / 开房对战，看看你有多了解她们
+            </p>
+          </div>
+          <span className="text-[#c98a3e] text-sm font-medium group-hover:translate-x-1 transition-transform shrink-0">
+            进入 →
+          </span>
+        </div>
+      </Link>
 
       {/* ========== 那年今日 ========== */}
       {onThisDay?.hasContent && (
