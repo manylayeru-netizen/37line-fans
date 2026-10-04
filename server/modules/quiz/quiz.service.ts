@@ -533,12 +533,6 @@ export class QuizService {
       if (!(ai >= 0 && ai <= 3)) throw new BadRequestException('正确答案下标非法');
       values.correctOption = ai;
     }
-    if (patch.category === 'basic' || patch.category === 'sugar') {
-      values.category = patch.category;
-    }
-    if (['easy', 'medium', 'hard'].includes(patch.difficulty || '')) {
-      values.difficulty = patch.difficulty;
-    }
     if (patch.sourceUrl != null) values.sourceUrl = patch.sourceUrl;
     if (patch.sourceNote != null) values.sourceNote = patch.sourceNote;
     if (['active', 'disabled', 'pending'].includes(patch.status || '')) {
@@ -597,10 +591,8 @@ export class QuizService {
       stem,
       options,
       answerIndex,
-      category: data.category === 'sugar' ? 'sugar' : 'basic',
-      difficulty: ['easy', 'medium', 'hard'].includes(data.difficulty || '')
-        ? (data.difficulty as string)
-        : 'medium',
+      category: '',
+      difficulty: '',
       sourceUrl: data.sourceUrl?.trim() || '',
       sourceNote: data.sourceNote?.trim() || '',
     };

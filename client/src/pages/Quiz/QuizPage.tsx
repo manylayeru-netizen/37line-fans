@@ -41,8 +41,6 @@ const EMPTY_QFORM: QuestionInput = {
   stem: '',
   options: ['', '', '', ''],
   answerIndex: 0,
-  category: 'sugar',
-  difficulty: 'medium',
   sourceUrl: '',
 };
 
@@ -431,25 +429,6 @@ const QuizPage: React.FC = () => {
                   />
                 </div>
               ))}
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={qForm.category}
-                  onChange={(e) => setQForm((f) => ({ ...f, category: e.target.value }))}
-                  className="rounded-lg border-2 border-cocoa/10 bg-cream/40 px-3 py-2 text-sm"
-                >
-                  <option value="sugar">糖点</option>
-                  <option value="basic">基础</option>
-                </select>
-                <select
-                  value={qForm.difficulty}
-                  onChange={(e) => setQForm((f) => ({ ...f, difficulty: e.target.value }))}
-                  className="rounded-lg border-2 border-cocoa/10 bg-cream/40 px-3 py-2 text-sm"
-                >
-                  <option value="easy">简单</option>
-                  <option value="medium">普通</option>
-                  <option value="hard">困难</option>
-                </select>
-              </div>
               <Input
                 value={qForm.sourceUrl}
                 onChange={(e) => setQForm((f) => ({ ...f, sourceUrl: e.target.value }))}
