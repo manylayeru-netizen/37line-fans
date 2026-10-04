@@ -55,6 +55,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const [myDetail, setMyDetail] = useState<BattleSubmitResult | null>(null);
   const [settle, setSettle] = useState<BattleSettleResult | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [battleCount, setBattleCount] = useState(10);
 
   const realtimeRef = useRef<Ably.Realtime | null>(null);
   const channelRef = useRef<Ably.RealtimeChannel | null>(null);
@@ -237,7 +238,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (!ch || !bothReady) return;
     setBusy(true);
     try {
-      const qs = await quizApi.battleStart();
+      const qs = await quizApi.battleStart(battleCount);
       await ch.publish('start', { questionIds: qs.map((q) => q.id) });
       beginPlay(qs);
     } catch {
@@ -359,9 +360,25 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         <div className="rounded-2xl border-2 border-dashed border-shiba/40 bg-paper p-6 text-center mb-4">
           <Users size={30} className="text-shiba mx-auto" />
           <p className="mt-2 text-ink font-medium">创建房间</p>
-          <p className="text-xs text-cocoa/60 mt-1 mb-4">
+          <p className="text-xs text-cocoa/60 mt-1 mb-3">
             生成房间码，邀请好友加入后开始
           </p>
+          <div className="flex items-center justify-center gap-1.5 mb-4">
+            <span className="text-xs text-cocoa/60 mr-1">题目数</span>
+            {[5, 10, 15, 20].map((n) => (
+              <button
+                key={n}
+                onClick={() => setBattleCount(n)}
+                className={`w-9 h-9 rounded-full text-sm transition-colors ${
+                  battleCount === n
+                    ? 'bg-shiba text-white'
+                    : 'bg-cream text-cocoa/70 hover:bg-shiba/10'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
           <Button onClick={createRoom} disabled={busy} className="rounded-full">
             创建房间
           </Button>
@@ -622,23 +639,59 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
         ))}
       </div>
 
-      <div className="space-y-2 mb-8">
+      <div className="space-y-3 mb-8">
         {resultDetail?.map((d, i) => {
           const q = questions.find((x) => x.id === d.questionId);
+          const stem = d.stem ?? q?.stem ?? '';
+          const opts = d.options ?? q?.options ?? [];
           return (
             <div
               key={d.questionId}
-              className={`rounded-xl border-l-4 bg-paper px-4 py-3 text-sm ${
-                d.isCorrect ? 'border-teal' : 'border-coral'
+              className={`rounded-xl border-2 bg-paper px-4 py-3 text-sm ${
+                d.isCorrect ? 'border-teal/40' : 'border-coral/60'
               }`}
             >
-              <p className="text-ink">
+              <p className="text-ink font-medium mb-2">
                 {d.isCorrect ? '✓ ' : '✗ '}
-                {i + 1}. {q?.stem}
+                {i + 1}. {stem}
               </p>
-              {!d.isCorrect ? (
-                <p className="mt-1 text-xs text-cocoa/60">
-                  正确答案：{q?.options[d.correct]}
+              <div className="space-y-1.5">
+                {opts.map((opt, oi) => {
+                  const isRight = oi === d.correct;
+                  const isPicked = oi === d.selected;
+                  let cls = 'border-cocoa/10 bg-cream/30 text-cocoa/80';
+                  let tag = null;
+                  if (isRight) {
+                    cls = 'border-teal bg-teal/15 text-ink';
+                    tag = <span className="text-[11px] text-teal font-bold ml-auto">正确答案</span>;
+                  } else if (isPicked) {
+                    cls = 'border-coral bg-coral/15 text-coral';
+                    tag = <span className="text-[11px] text-coral font-bold ml-auto">你的选择</span>;
+                  }
+                  return (
+                    <div key={oi} className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 ${cls}`}>
+                      <span className="font-bold w-5 shrink-0">{String.fromCharCode(65 + oi)}</span>
+                      <span className="flex-1">{opt}</span>
+                      {tag}
+                    </div>
+                  );
+                })}
+              </div>
+              {d.sourceUrl || d.sourceNote ? (
+                <p className="mt-2 text-xs text-cocoa/50">
+                  出处：
+                  {d.sourceUrl ? (
+                    <a
+                      href={d.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline text-penguin hover:text-shiba"
+                    >
+                      {d.sourceNote || '查看来源'}
+                    </a>
+                  ) : (
+                    d.sourceNote
+                  )}
                 </p>
               ) : null}
             </div>

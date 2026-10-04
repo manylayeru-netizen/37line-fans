@@ -130,17 +130,34 @@ export class QuizService {
 
     const ids = answers.map((a) => a.questionId);
     const qrows = await this.db
-      .select({ id: quizQuestions.id, correct: quizQuestions.correctOption })
+      .select({
+        id: quizQuestions.id,
+        correct: quizQuestions.correctOption,
+        stem: quizQuestions.stem,
+        options: quizQuestions.options,
+        sourceUrl: quizQuestions.sourceUrl,
+        sourceNote: quizQuestions.sourceNote,
+      })
       .from(quizQuestions)
       .where(inArray(quizQuestions.id, ids));
-    const correctMap = new Map(qrows.map((q) => [q.id, q.correct]));
+    const qmap = new Map(qrows.map((q) => [q.id, q]));
 
     let correctCount = 0;
     const detail = answers.map((a) => {
-      const correct = correctMap.get(a.questionId);
+      const q = qmap.get(a.questionId);
+      const correct = q?.correct;
       const isCorrect = correct != null && a.selectedIndex === correct;
       if (isCorrect) correctCount += 1;
-      return { questionId: a.questionId, selected: a.selectedIndex, correct, isCorrect };
+      return {
+        questionId: a.questionId,
+        selected: a.selectedIndex,
+        correct,
+        isCorrect,
+        stem: q?.stem,
+        options: q?.options,
+        sourceUrl: q?.sourceUrl ?? null,
+        sourceNote: q?.sourceNote ?? null,
+      };
     });
 
     let maxStreak = 0;
@@ -187,8 +204,8 @@ export class QuizService {
 
   // ---------------- 玩家：在线对决 ----------------
 
-  async battleStart(): Promise<PublicQuestion[]> {
-    return this.getQuestions('battle', undefined, 10);
+  async battleStart(count?: number): Promise<PublicQuestion[]> {
+    return this.getQuestions('battle', undefined, count || 10);
   }
 
   async getQuestionsByIds(ids: string[]): Promise<PublicQuestion[]> {
@@ -231,17 +248,34 @@ export class QuizService {
 
     const ids = answers.map((a) => a.questionId);
     const qrows = await this.db
-      .select({ id: quizQuestions.id, correct: quizQuestions.correctOption })
+      .select({
+        id: quizQuestions.id,
+        correct: quizQuestions.correctOption,
+        stem: quizQuestions.stem,
+        options: quizQuestions.options,
+        sourceUrl: quizQuestions.sourceUrl,
+        sourceNote: quizQuestions.sourceNote,
+      })
       .from(quizQuestions)
       .where(inArray(quizQuestions.id, ids));
-    const correctMap = new Map(qrows.map((q) => [q.id, q.correct]));
+    const qmap = new Map(qrows.map((q) => [q.id, q]));
 
     let correctCount = 0;
     const detail = answers.map((a) => {
-      const correct = correctMap.get(a.questionId);
+      const q = qmap.get(a.questionId);
+      const correct = q?.correct;
       const isCorrect = correct != null && a.selectedIndex === correct;
       if (isCorrect) correctCount += 1;
-      return { questionId: a.questionId, selected: a.selectedIndex, correct, isCorrect };
+      return {
+        questionId: a.questionId,
+        selected: a.selectedIndex,
+        correct,
+        isCorrect,
+        stem: q?.stem,
+        options: q?.options,
+        sourceUrl: q?.sourceUrl ?? null,
+        sourceNote: q?.sourceNote ?? null,
+      };
     });
 
     const urows = await this.db

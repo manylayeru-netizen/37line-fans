@@ -90,8 +90,8 @@ export class QuizController {
 
   @UseGuards(AuthGuard)
   @Post('battle/start')
-  async battleStart() {
-    const data = await this.quizService.battleStart();
+  async battleStart(@Body() body: any) {
+    const data = await this.quizService.battleStart(parseInt(body?.count, 10));
     return { code: 0, message: 'ok', data };
   }
 

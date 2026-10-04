@@ -34,6 +34,10 @@ export interface QuizSubmitResult {
     selected: number;
     correct: number;
     isCorrect: boolean;
+    stem?: string;
+    options?: string[];
+    sourceUrl?: string | null;
+    sourceNote?: string | null;
   }>;
 }
 
@@ -161,10 +165,10 @@ export async function getAblyToken(): Promise<Record<string, unknown>> {
   return res.data;
 }
 
-export async function battleStart(): Promise<QuizQuestion[]> {
+export async function battleStart(count = 10): Promise<QuizQuestion[]> {
   const res = await apiPost<{ data: QuizQuestion[] }>(
     '/api/quiz/battle/start',
-    {},
+    { count },
   );
   return res.data;
 }

@@ -18,8 +18,7 @@ interface NavItem {
    { label: '考古日历', path: '/calendar', color: '#a87d4b' },
    { label: '照片集', path: '/collection', color: '#d9cfa9' },
    { label: '留言板', path: '/guestbook', color: '#6B4F3A' },
-   // 疝鸡杯暂时下线，题库完善后恢复入口
- // { label: '疝鸡杯', path: '/quiz', color: '#c98a3e' },
+   { label: '疝鸡杯', path: '/quiz', color: '#c98a3e' },
  ];
 
  const ribbonOffset = (index: number): number => {
