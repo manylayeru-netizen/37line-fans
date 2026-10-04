@@ -150,7 +150,7 @@ const QuizPage: React.FC = () => {
     try {
       const qs = await quizApi.getQuestions({
         mode: m,
-        count: m === 'timed' ? 10 : 0,
+        count: 0,
       });
       setQuestions(qs);
       startRef.current = Date.now();
