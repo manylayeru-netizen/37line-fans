@@ -79,6 +79,7 @@ const QuizPage: React.FC = () => {
   // ---------------- 榜单 ----------------
 
   const loadBoard = async (m: Mode, p: 'day' | 'week') => {
+    setBoard([]);
     try {
       setBoard(await quizApi.getLeaderboard({ mode: m, period: p }));
     } catch {
@@ -245,7 +246,7 @@ const QuizPage: React.FC = () => {
         desc: '开房邀请好友，同题竞速',
         disabled: false,
       },
-      { key: 'timed', icon: Timer, title: '限时赛', desc: `${TIMED_SECONDS} 秒内答 10 题`, disabled: false },
+      { key: 'timed', icon: Timer, title: '限时赛', desc: `${TIMED_SECONDS} 秒内全力作答，答对越多分越高`, disabled: false },
       { key: 'streak', icon: Flame, title: '连胜赛', desc: '答错即止，挑战最长连胜', disabled: false },
     ];
 
