@@ -74,8 +74,10 @@ export class QuizService {
     if (category === 'basic' || category === 'sugar') {
       conditions.push(eq(quizQuestions.category, category));
     }
-    const limit = Math.min(Math.max(Number(count) || 10, 1), 30);
-    const rows = await this.db
+    // count <= 0 表示出全部 active 题（连胜赛用）；否则取 [1, 100] 区间
+    const rawCount = Number(count);
+    const wantAll = !rawCount || rawCount <= 0;
+    const base = this.db
       .select({
         id: quizQuestions.id,
         stem: quizQuestions.stem,
@@ -85,8 +87,10 @@ export class QuizService {
       })
       .from(quizQuestions)
       .where(and(...conditions))
-      .orderBy(sql`RAND()`)
-      .limit(limit);
+      .orderBy(sql`RAND()`);
+    const rows = wantAll
+      ? await base
+      : await base.limit(Math.min(Math.max(rawCount, 1), 100));
 
     return rows.map((r) => ({
       id: r.id,
