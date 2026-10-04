@@ -37,6 +37,16 @@ type Mode = 'timed' | 'streak';
 type View = 'home' | 'play' | 'result';
 
 const TIMED_SECONDS = 90;
+
+// 每局随机打乱选项顺序（只在开局时打乱一次，重渲染不抖动）
+function shuffleOptions(opts: string[]): string[] {
+  const arr = [...opts];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 const EMPTY_QFORM: QuestionInput = {
   stem: '',
   options: ['', '', '', ''],
@@ -54,7 +64,7 @@ const QuizPage: React.FC = () => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<
-    Array<{ questionId: string; selectedIndex: number }>
+    Array<{ questionId: string; selectedText: string }>
   >([]);
   const [result, setResult] = useState<QuizSubmitResult | null>(null);
   const [timeLeft, setTimeLeft] = useState(TIMED_SECONDS);
@@ -152,7 +162,7 @@ const QuizPage: React.FC = () => {
         mode: m,
         count: 0,
       });
-      setQuestions(qs);
+      setQuestions(qs.map((q) => ({ ...q, options: shuffleOptions(q.options) })));
       startRef.current = Date.now();
       setView('play');
     } catch {
@@ -167,7 +177,8 @@ const QuizPage: React.FC = () => {
   const onSelectTimed = (selectedIndex: number) => {
     const q = questionsRef.current[index];
     if (!q) return;
-    const ans = [...answersRef.current, { questionId: q.id, selectedIndex }];
+    const selectedText = q.options[selectedIndex] ?? '';
+    const ans = [...answersRef.current, { questionId: q.id, selectedText }];
     answersRef.current = ans;
     setAnswers(ans);
     if (index + 1 >= questionsRef.current.length) {
@@ -180,11 +191,12 @@ const QuizPage: React.FC = () => {
   const onSelectStreak = async (selectedIndex: number) => {
     const q = questionsRef.current[index];
     if (!q) return;
-    const ans = [...answersRef.current, { questionId: q.id, selectedIndex }];
+    const selectedText = q.options[selectedIndex] ?? '';
+    const ans = [...answersRef.current, { questionId: q.id, selectedText }];
     answersRef.current = ans;
     setAnswers(ans);
     try {
-      const ok = await quizApi.answerOne({ questionId: q.id, selectedIndex });
+      const ok = await quizApi.answerOne({ questionId: q.id, selectedText });
       if (ok) {
         if (index + 1 >= questionsRef.current.length) {
           await finish();
@@ -522,8 +534,8 @@ const QuizPage: React.FC = () => {
       <div className="space-y-3 mb-8">
         {result?.detail.map((d, i) => {
           const q = questions.find((x) => x.id === d.questionId);
-          const stem = d.stem ?? q?.stem ?? '';
-          const opts = d.options ?? q?.options ?? [];
+          const stem = q?.stem ?? d.stem ?? '';
+          const opts = q?.options ?? d.options ?? [];
           return (
             <div
               key={d.questionId}
@@ -537,8 +549,8 @@ const QuizPage: React.FC = () => {
               </p>
               <div className="space-y-1.5">
                 {opts.map((opt, oi) => {
-                  const isRight = oi === d.correct;
-                  const isPicked = oi === d.selected;
+                  const isRight = opt === d.correctText;
+                  const isPicked = opt === d.selectedText;
                   let cls = 'border-cocoa/10 bg-cream/30 text-cocoa/80';
                   let tag = null;
                   if (isRight) {

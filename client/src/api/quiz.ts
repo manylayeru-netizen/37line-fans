@@ -31,8 +31,8 @@ export interface QuizSubmitResult {
   maxStreak: number;
   detail: Array<{
     questionId: string;
-    selected: number;
-    correct: number;
+    selectedText?: string;
+    correctText?: string;
     isCorrect: boolean;
     stem?: string;
     options?: string[];
@@ -81,7 +81,7 @@ export async function getQuestions(params: {
 
 export async function answerOne(data: {
   questionId: string;
-  selectedIndex: number;
+  selectedText: string;
 }): Promise<boolean> {
   const res = await apiPost<{ data: { isCorrect: boolean } }>(
     '/api/quiz/answer-one',
@@ -92,7 +92,7 @@ export async function answerOne(data: {
 
 export async function submitAnswers(data: {
   mode: string;
-  answers: Array<{ questionId: string; selectedIndex: number }>;
+  answers: Array<{ questionId: string; selectedText: string }>;
   durationSec?: number;
   maxStreak?: number;
 }): Promise<QuizSubmitResult> {
@@ -182,7 +182,7 @@ export async function getQuestionsByIds(ids: string[]): Promise<QuizQuestion[]> 
 }
 
 export async function battleSubmit(data: {
-  answers: Array<{ questionId: string; selectedIndex: number }>;
+  answers: Array<{ questionId: string; selectedText: string }>;
   opponentId: string;
   durationSec?: number;
 }): Promise<BattleSubmitResult> {

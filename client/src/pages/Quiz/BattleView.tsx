@@ -24,6 +24,15 @@ interface Member {
 type Phase = 'lobby' | 'room' | 'play' | 'result';
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function shuffleOptions(opts: string[]): string[] {
+  const arr = [...opts];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 function genCode(): string {
   let s = '';
   for (let i = 0; i < 6; i += 1) {
@@ -50,7 +59,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [myDetail, setMyDetail] = useState<BattleSubmitResult | null>(null);
   const [settle, setSettle] = useState<BattleSettleResult | null>(null);
@@ -60,7 +69,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   const realtimeRef = useRef<Ably.Realtime | null>(null);
   const channelRef = useRef<Ably.RealtimeChannel | null>(null);
   const questionsRef = useRef<QuizQuestion[]>([]);
-  const answersRef = useRef<Record<string, number>>({});
+  const answersRef = useRef<Record<string, string>>({});
   const opponentRef = useRef<Member | null>(null);
   const startRef = useRef(0);
   const scoreIdRef = useRef<string | null>(null);
@@ -127,11 +136,12 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
   };
 
   const beginPlay = (qs: QuizQuestion[]) => {
-    questionsRef.current = qs;
+    const shuffled = qs.map((q) => ({ ...q, options: shuffleOptions(q.options) }));
+    questionsRef.current = shuffled;
     answersRef.current = {};
     scoreIdRef.current = null;
     oppResultRef.current = null;
-    setQuestions(qs);
+    setQuestions(shuffled);
     setAnswers({});
     setIndex(0);
     setSubmitted(false);
@@ -263,7 +273,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     );
     const answerArr = qs.map((q) => ({
       questionId: q.id,
-      selectedIndex: ansMap[q.id] ?? -1,
+      selectedText: ansMap[q.id] ?? '',
     }));
     try {
       const r = await quizApi.battleSubmit({
@@ -290,7 +300,7 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
     if (submitted) return;
     const qs = questionsRef.current;
     const q = qs[qIndex];
-    const next = { ...answersRef.current, [q.id]: optIndex };
+    const next = { ...answersRef.current, [q.id]: q.options[optIndex] ?? '' };
     answersRef.current = next;
     setAnswers(next);
     await channelRef.current?.presence.update({
@@ -642,8 +652,8 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
       <div className="space-y-3 mb-8">
         {resultDetail?.map((d, i) => {
           const q = questions.find((x) => x.id === d.questionId);
-          const stem = d.stem ?? q?.stem ?? '';
-          const opts = d.options ?? q?.options ?? [];
+          const stem = q?.stem ?? d.stem ?? '';
+          const opts = q?.options ?? d.options ?? [];
           return (
             <div
               key={d.questionId}
@@ -657,8 +667,8 @@ const BattleView: React.FC<{ onExit: () => void }> = ({ onExit }) => {
               </p>
               <div className="space-y-1.5">
                 {opts.map((opt, oi) => {
-                  const isRight = oi === d.correct;
-                  const isPicked = oi === d.selected;
+                  const isRight = opt === d.correctText;
+                  const isPicked = opt === d.selectedText;
                   let cls = 'border-cocoa/10 bg-cream/30 text-cocoa/80';
                   let tag = null;
                   if (isRight) {

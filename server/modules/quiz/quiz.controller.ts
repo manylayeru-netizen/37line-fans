@@ -40,7 +40,7 @@ export class QuizController {
   async answerOne(@Body() body: any) {
     const data = await this.quizService.answerOne(
       body.questionId,
-      body.selectedIndex,
+      body.selectedText,
     );
     return { code: 0, message: 'ok', data };
   }

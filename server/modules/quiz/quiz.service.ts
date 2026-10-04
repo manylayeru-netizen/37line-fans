@@ -23,7 +23,7 @@ export interface PublicQuestion {
 
 export interface SubmitAnswerItem {
   questionId: string;
-  selectedIndex: number;
+  selectedText: string;
 }
 
 interface QuestionInput {
@@ -103,10 +103,11 @@ export class QuizService {
 
   // ---------------- 玩家：单题轻判（连胜赛用，不回答案 / 不写库）----------------
 
-  async answerOne(questionId: string, selectedIndex: number) {
+  async answerOne(questionId: string, selectedText: string) {
     const rows = await this.db
       .select({
         correct: quizQuestions.correctOption,
+        options: quizQuestions.options,
         status: quizQuestions.status,
       })
       .from(quizQuestions)
@@ -114,7 +115,8 @@ export class QuizService {
       .limit(1);
     const q = rows[0];
     if (!q || q.status !== 'active') return { isCorrect: false };
-    return { isCorrect: Number(selectedIndex) === q.correct };
+    const correctText = (q.options ?? [])[q.correct] ?? '';
+    return { isCorrect: String(selectedText ?? '') === correctText };
   }
 
   // ---------------- 玩家：提交（服务端判分 + 写一条成绩）----------------
@@ -149,13 +151,15 @@ export class QuizService {
     let correctCount = 0;
     const detail = answers.map((a) => {
       const q = qmap.get(a.questionId);
-      const correct = q?.correct;
-      const isCorrect = correct != null && a.selectedIndex === correct;
+      const opts = q?.options ?? [];
+      const correctText = q != null ? (opts[q.correct] ?? '') : '';
+      const selectedText = String(a.selectedText ?? '');
+      const isCorrect = !!q && selectedText === correctText;
       if (isCorrect) correctCount += 1;
       return {
         questionId: a.questionId,
-        selected: a.selectedIndex,
-        correct,
+        selectedText,
+        correctText,
         isCorrect,
         stem: q?.stem,
         options: q?.options,
@@ -267,13 +271,15 @@ export class QuizService {
     let correctCount = 0;
     const detail = answers.map((a) => {
       const q = qmap.get(a.questionId);
-      const correct = q?.correct;
-      const isCorrect = correct != null && a.selectedIndex === correct;
+      const opts = q?.options ?? [];
+      const correctText = q != null ? (opts[q.correct] ?? '') : '';
+      const selectedText = String(a.selectedText ?? '');
+      const isCorrect = !!q && selectedText === correctText;
       if (isCorrect) correctCount += 1;
       return {
         questionId: a.questionId,
-        selected: a.selectedIndex,
-        correct,
+        selectedText,
+        correctText,
         isCorrect,
         stem: q?.stem,
         options: q?.options,
